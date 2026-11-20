@@ -20,9 +20,9 @@ export class H2OAuthManager {
       }
     } catch (e) {}
 
-    // Generate Groq-pattern undetectable instance access key (gsk_[44 random chars])
+    // Generate H2O-native high-entropy API key (h2o_[44 random alphanumeric chars])
     const randomPart = crypto.randomBytes(33).toString('base64url').replace(/[^a-zA-Z0-9]/g, '').substring(0, 44);
-    const newKey = `gsk_${randomPart}`;
+    const newKey = `h2o_${randomPart}`;
 
     try {
       fs.writeFileSync(this.keyFilePath, newKey, 'utf8');
