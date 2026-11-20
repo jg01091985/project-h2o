@@ -13,59 +13,17 @@ try {
 } catch (e) {}
 puppeteer.use(stealth);
 
-function generateSmartFallback(prompt) {
-  let cleanPrompt = prompt;
-  if (prompt && prompt.includes('User:')) {
-    const idx = prompt.lastIndexOf('User:');
-    cleanPrompt = prompt.substring(idx + 5).trim();
+import { GeminiBridge } from './gemini-bridge.js';
+
+const geminiBridge = new GeminiBridge();
+
+async function executeSdkFallback(prompt) {
+  try {
+    const res = await geminiBridge.generateContent(prompt);
+    return res.text || res.response?.text() || 'Execution completed.';
+  } catch (err) {
+    throw new Error(`Browser extraction failed and SDK fallback encountered error: ${err.message}`);
   }
-  const p = cleanPrompt.toLowerCase();
-
-  if (p.includes('quantum computing')) {
-    return "Quantum computing leverages quantum mechanical phenomena like superposition and entanglement to perform complex computations exponentially faster than classical computers using qubits.";
-  }
-
-  if (p.includes('vm') || p.includes('spec') || p.includes('ram') || p.includes('cpu') || p.includes('hardware')) {
-    return "VM Specifications: 1 vCPU core, 4 GB RAM allocation, 50 GB NVMe storage, running inside an isolated Docker container with Project Hydrogen autonomous control active.";
-  }
-
-  if (p.includes('who') || p.includes('what are you') || p.includes('your name') || p.includes('who you')) {
-    return "I am H2O AI, your universal API-less AI inference server.";
-  }
-
-  if (p.includes('where')) {
-    const locMatch = cleanPrompt.match(/where\s+(?:is|r|if)?\s*(.+?)(?:\?|$)/i);
-    const location = locMatch ? locMatch[1].trim() : '';
-    const locLower = location.toLowerCase();
-
-    if (locLower.includes('petchaburi') || locLower.includes('เพชรบุรี')) {
-      return "Petchaburi is a historic province and city in western Thailand, located about 160 km south of Bangkok. It is renowned for its ancient temples (such as Wat Mahathat), Khao Luang Cave with its stalactites and Buddha images, delicious local sweets (Khanom Mo Kaeng), and nearby seaside resort towns like Cha-am.";
-    }
-    if (locLower.includes('bangkok')) {
-      return "Bangkok is the capital and largest city of Thailand, located along the Chao Phraya River delta. It is famous for ornate shrines, vibrant street life, floating markets, and cultural landmarks like the Grand Palace.";
-    }
-    if (locLower.includes('vietnam')) {
-      return "Vietnam is a Southeast Asian country known for its beaches, rivers, Buddhist pagodas, and bustling cities. Its capital is Hanoi, and its largest city is Ho Chi Minh City.";
-    }
-    if (locLower.includes('tokyo')) {
-      return "Tokyo is the capital of Japan, combining ultramodern and traditional aspects from neon-lit skyscrapers to historic temples.";
-    }
-
-    if (location) {
-      return `${location.charAt(0).toUpperCase() + location.slice(1)} is a recognized geographic destination featuring local cultural landmarks, historical significance, and regional economic activity.`;
-    }
-    return "Could you please specify what location you are looking for?";
-  }
-
-  if (p.includes('hello') || p.includes('hi') || p.includes('hey') || p.includes('sup')) {
-    return "Hello! How can I help you today?";
-  }
-
-  if (p.includes('status') || p.includes('health')) {
-    return "All systems operational.";
-  }
-
-  return `Here is the answer regarding "${cleanPrompt}": This topic involves key structural principles and execution logic. Feel free to ask for specific code or further breakdown.`;
 }
 
 export class BrowserBridge {
@@ -230,7 +188,7 @@ export class BrowserBridge {
               }, promptText, selfHeal.getSelectors('textarea'));
 
               if (dispatchRes.status === 'simulated') {
-                return generateSmartFallback(promptText);
+                return await executeSdkFallback(promptText);
               }
 
               await worker.page.keyboard.press('Enter').catch(() => {});
@@ -266,7 +224,7 @@ export class BrowserBridge {
                 }
               }
 
-              return (extractedReply && !extractedReply.includes('Start exploring')) ? extractedReply : generateSmartFallback(promptText);
+              return (extractedReply && !extractedReply.includes('Start exploring')) ? extractedReply : await executeSdkFallback(promptText);
             })();
 
             const timeoutPromise = new Promise((_, rej) => setTimeout(() => rej(new Error('Browser evaluation timeout (30s)')), 30000));
@@ -278,9 +236,14 @@ export class BrowserBridge {
           } catch (err) {
             worker.busy = false;
             if (CONFIG.DEBUG) {
-              console.warn('[H2O BrowserBridge] Execution timeout/exception, falling back to autonomous mode:', err.message);
+              console.warn('[H2O BrowserBridge] Execution timeout/exception, falling back to SDK execution:', err.message);
             }
-            resolve(generateSmartFallback(promptText));
+            try {
+              const res = await executeSdkFallback(promptText);
+              resolve(res);
+            } catch (sdkErr) {
+              reject(sdkErr);
+            }
           }
         })();
       } catch (err) {
