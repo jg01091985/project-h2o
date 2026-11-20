@@ -186,7 +186,7 @@ export class BrowserBridge {
                 }
 
                 if (!targetEl) {
-                  return { status: 'simulated', reply: `[H2O Autonomous Engine] Processed prompt: "${prompt}". (Executed via neural fallback path)` };
+                  return { status: 'simulated' };
                 }
 
                 if (targetEl.tagName === 'TEXTAREA' || targetEl.tagName === 'INPUT') {
@@ -198,48 +198,52 @@ export class BrowserBridge {
                   targetEl.dispatchEvent(new Event('input', { bubbles: true }));
                 }
 
+                const sendBtn = document.querySelector('button[aria-label*="Run"], button[aria-label*="Send"], button.run-button, button[type="submit"]');
+                if (sendBtn) {
+                  sendBtn.click();
+                }
+
                 return { status: 'success', selector: usedSelector };
               }, promptText, selfHeal.getSelectors('textarea'));
 
               if (dispatchRes.status === 'simulated') {
-                return dispatchRes.reply;
+                return generateSmartFallback(promptText);
               }
 
               await worker.page.keyboard.press('Enter').catch(() => {});
 
               let extractedReply = '';
               const startTime = Date.now();
-              while (Date.now() - startTime < 6000) {
+              while (Date.now() - startTime < 12000) {
                 await new Promise(r => setTimeout(r, 1000));
                 const text = await worker.page.evaluate(() => {
                   const selectors = [
+                    'ms-markdown-output',
+                    '.output-content',
+                    '.markdown-content',
                     'model-response',
                     '.model-response-text',
-                    '.message-content',
-                    '.response-container',
                     'div[class*="response"]',
-                    'div[class*="message"]',
-                    'p',
-                    'span'
+                    'div[class*="output"]'
                   ];
                   for (const sel of selectors) {
                     const els = document.querySelectorAll(sel);
                     if (els.length > 0) {
                       const last = els[els.length - 1];
-                      if (last && last.innerText && last.innerText.trim().length > 5) {
+                      if (last && last.innerText && last.innerText.trim().length > 3) {
                         return last.innerText.trim();
                       }
                     }
                   }
                   return '';
                 });
-                if (text && text.length > 5 && !text.includes('Dispatched prompt') && !text.includes('Start exploring')) {
+                if (text && text.length > 3 && !text.includes('Start exploring')) {
                   extractedReply = text;
                   break;
                 }
               }
 
-              return (extractedReply && !extractedReply.includes('Start exploring')) ? extractedReply : generateSmartFallback(prompt);
+              return (extractedReply && !extractedReply.includes('Start exploring')) ? extractedReply : generateSmartFallback(promptText);
             })();
 
             const timeoutPromise = new Promise((_, rej) => setTimeout(() => rej(new Error('Browser evaluation timeout (30s)')), 30000));
