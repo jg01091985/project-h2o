@@ -25,6 +25,10 @@ function generateSmartFallback(prompt) {
     return "Quantum computing leverages quantum mechanical phenomena like superposition and entanglement to perform complex computations exponentially faster than classical computers using qubits.";
   }
 
+  if (p.includes('vm') || p.includes('spec') || p.includes('ram') || p.includes('cpu') || p.includes('hardware')) {
+    return "VM Specifications: 1 vCPU core, 4 GB RAM allocation, 50 GB NVMe storage, running inside an isolated Docker container with Project Hydrogen autonomous control active.";
+  }
+
   if (p.includes('who') || p.includes('what are you') || p.includes('your name') || p.includes('who you')) {
     return "I am H2O AI, your universal API-less AI inference server.";
   }
