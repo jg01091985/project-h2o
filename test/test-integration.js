@@ -2,10 +2,10 @@ import http from 'http';
 import assert from 'assert';
 import { spawn } from 'child_process';
 
-console.log('Starting Clean Live Integration Verification for H2O Copilot...');
+console.log('Starting Clean Live Integration Verification for H2O Inference Server...');
 
 const serverProcess = spawn('node', ['src/h2o-copilot-server.js'], {
-  env: { ...process.env, DEBUG: 'true', HYDROGEN_USE_SDK: 'false' },
+  env: { ...process.env, DEBUG: 'true', H2O_INSTANCE_KEY: 'h2o_live_test_key' },
   stdio: 'pipe'
 });
 
@@ -26,7 +26,7 @@ serverProcess.stderr.on('data', (data) => {
   console.error('[Server Error Output]:', data.toString());
 });
 
-function makeRequest(port, method, path, body = null) {
+function makeRequest(port, method, path, headers = {}, body = null) {
   return new Promise((resolve, reject) => {
     const dataStr = body ? JSON.stringify(body) : '';
     const req = http.request({
@@ -36,7 +36,8 @@ function makeRequest(port, method, path, body = null) {
       method: method,
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(dataStr)
+        'Content-Length': Buffer.byteLength(dataStr),
+        ...headers
       }
     }, (res) => {
       let responseBody = '';
@@ -87,8 +88,10 @@ async function runTests() {
   assert.strictEqual(healthRes.body.status, 'ok');
   assert.strictEqual(healthRes.body.model, 'gemini-4-hydrogen');
 
-  console.log('\n--- VERIFYING POST /v1/copilot (API-less Bridge) ---');
+  console.log('\n--- VERIFYING POST /v1/copilot (Authenticated) ---');
   const copilotRes = await makeRequest(activePort, 'POST', '/v1/copilot', {
+    'Authorization': 'Bearer h2o_live_test_key'
+  }, {
     messages: [
       { role: 'user', content: 'Give status telemetry for application metrics.' }
     ]
