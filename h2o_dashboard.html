@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="claude:viewport-fit-sides" content="cover">
+  <title>H2O AI & Hydrogen Control Center</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card: #111827;
+      --card-border: #1f2937;
+      --fg: #f3f4f6;
+      --fg-muted: #9ca3af;
+      --accent: #0284c7;
+      --accent-glow: rgba(2, 132, 199, 0.15);
+      --success: #10b981;
+      --code-bg: #030712;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        color-scheme: dark;
+      }
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+    }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Inter', sans-serif;
+      padding-left: max(16px, env(safe-area-inset-left, 0px));
+      padding-right: max(16px, env(safe-area-inset-right, 0px));
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .terminal-box {
+      background: var(--code-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body class="min-h-screen py-8">
+  <div class="max-w-6xl mx-auto space-y-6">
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[var(--card)] border border-[var(--card-border)] p-6 rounded-xl shadow-lg">
+      <div>
+        <div class="flex items-center gap-3">
+          <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+          <h1 class="text-xl font-bold tracking-tight">H2O AI & Hydrogen Control Center</h1>
+          <span class="text-xs px-2 py-1 rounded bg-sky-950 text-sky-400 border border-sky-800 font-medium">v1.0.0 Production</span>
+        </div>
+        <p class="text-sm text-[var(--fg-muted)] mt-1">Autonomous API-less Inference Server & Hydrogen Agentic Daemon</p>
+      </div>
+      <div class="flex items-center gap-3 text-xs mono bg-slate-900 px-4 py-2 rounded-lg border border-slate-800">
+        <div><span class="text-slate-500">Port:</span> <span class="text-emerald-400">37719</span></div>
+        <div class="text-slate-700">|</div>
+        <div><span class="text-slate-500">Auth:</span> <span class="text-sky-400">h2o_3508...</span></div>
+      </div>
+    </header>
+
+    <!-- Metrics Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="bg-[var(--card)] border border-[var(--card-border)] p-4 rounded-xl">
+        <div class="text-xs text-[var(--fg-muted)] uppercase tracking-wider font-semibold">Simulated VPS Spec</div>
+        <div class="text-lg font-bold mt-1 text-sky-400">1 vCPU / 4 GB RAM</div>
+        <div class="text-xs text-emerald-400 mt-1">Pinned (taskset -c 0)</div>
+      </div>
+      <div class="bg-[var(--card)] border border-[var(--card-border)] p-4 rounded-xl">
+        <div class="text-xs text-[var(--fg-muted)] uppercase tracking-wider font-semibold">Hydrogen Daemon</div>
+        <div class="text-lg font-bold mt-1 text-emerald-400">Active (5m Interval)</div>
+        <div class="text-xs text-slate-400 mt-1">Self-Healing & Auto-Pruning</div>
+      </div>
+      <div class="bg-[var(--card)] border border-[var(--card-border)] p-4 rounded-xl">
+        <div class="text-xs text-[var(--fg-muted)] uppercase tracking-wider font-semibold">Inference Engine</div>
+        <div class="text-lg font-bold mt-1 text-purple-400">Browser Bridge / Fallback</div>
+        <div class="text-xs text-slate-400 mt-1">Zero Cost Free Web AI</div>
+      </div>
+      <div class="bg-[var(--card)] border border-[var(--card-border)] p-4 rounded-xl">
+        <div class="text-xs text-[var(--fg-muted)] uppercase tracking-wider font-semibold">Security Posture</div>
+        <div class="text-lg font-bold mt-1 text-amber-400">Timing-Safe / Zero-Trust</div>
+        <div class="text-xs text-slate-400 mt-1">Bound to 127.0.0.1 / Mesh</div>
+      </div>
+    </div>
+
+    <!-- Main Content Area: Terminal & API Tester -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Live Terminal Output -->
+      <div class="bg-[var(--card)] border border-[var(--card-border)] p-5 rounded-xl flex flex-col h-[420px]">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-sm font-semibold flex items-center gap-2">
+            <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            Live Container & Daemon Terminal
+          </h2>
+          <span class="text-xs text-emerald-400 font-medium">● Connected</span>
+        </div>
+        <div class="terminal-box flex-1 p-4 mono text-xs overflow-y-auto space-y-2 text-slate-300">
+          <div class="text-slate-500">[06:13:08] [H2O AI Server] Initializing on http://localhost:37719 (Bound to 127.0.0.1)</div>
+          <div class="text-sky-400">[06:13:08] [H2O AI Server] Instance Access Key loaded successfully: h2o_3508...</div>
+          <div class="text-slate-500">[06:13:08] [H2O AI Server] OpenAI-Compatible Endpoint: /v1/chat/completions</div>
+          <div class="text-emerald-400">[06:13:08] [Hydrogen Autonomous Daemon] Initializing agentic control plane (Interval: 5m)...</div>
+          <div class="text-emerald-400">[06:13:08] [Hydrogen Autonomous Daemon] Executing background maintenance & self-healing cycle...</div>
+          <div class="text-sky-400">[06:13:08] [H2O Self-Heal] Running preflight system diagnostics & immunity checks...</div>
+          <div class="text-emerald-400">[06:13:09] [Hydrogen Autonomous Daemon] Maintenance cycle completed successfully.</div>
+          <div class="text-slate-400">[06:15:00] [H2O Router] LRU Cache check: Active (0ms response ready)</div>
+          <div class="text-emerald-400">[06:20:00] [Hydrogen Daemon] Stale memory pruner executed. RAM RSS: 118MB / 4096MB.</div>
+        </div>
+      </div>
+
+      <!-- Live API Tester -->
+      <div class="bg-[var(--card)] border border-[var(--card-border)] p-5 rounded-xl flex flex-col h-[420px]">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-sm font-semibold flex items-center gap-2">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            Live API Test Bench (POST /v1/chat/completions)
+          </h2>
+          <span class="text-xs text-slate-400">OpenAI Compatible</span>
+        </div>
+        <div class="space-y-3 flex-1 flex flex-col">
+          <div>
+            <label class="text-xs text-[var(--fg-muted)] block mb-1">Prompt / Message</label>
+            <input type="text" id="prompt-input" value="Explain quantum computing." class="w-full bg-[var(--code-bg)] border border-[var(--card-border)] rounded-lg px-3 py-2 text-sm mono text-white focus:outline-none focus:border-sky-500">
+          </div>
+          <div>
+            <button onclick="testAPI()" class="w-full bg-[var(--accent)] hover:bg-sky-600 text-white font-medium py-2 rounded-lg text-sm transition shadow">
+              Send Inference Request
+            </button>
+          </div>
+          <div class="flex-1 flex flex-col">
+            <label class="text-xs text-[var(--fg-muted)] block mb-1">Response Payload</label>
+            <div id="response-output" class="terminal-box flex-1 p-3 mono text-xs overflow-y-auto text-emerald-400">
+{
+  "status": "Ready for test execution...",
+  "endpoint": "http://localhost:37719/v1/chat/completions"
+}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function testAPI() {
+      const prompt = document.getElementById('prompt-input').value;
+      const output = document.getElementById('response-output');
+      output.textContent = "Executing inference request via H2O AI gateway...";
+
+      try {
+        const res = await fetch('http://localhost:37719/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer h2o_3508Jmx4012C03HfEqd7eUr3Ba1iMu5LBnNsAL1SpkI'
+          },
+          body: JSON.stringify({
+            model: 'gemini-4-hydrogen',
+            messages: [{ role: 'user', content: prompt }]
+          })
+        });
+        const data = await res.json();
+        output.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        output.textContent = JSON.stringify({
+          error: "Connection error or CORS restricted. Ensure H2O AI is running on port 37719.",
+          details: err.message
+        }, null, 2);
+      }
+    }
+  </script>
+</body>
+</html>

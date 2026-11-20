@@ -6,6 +6,7 @@
   "main": "src/h2o-server.js",
   "scripts": {
     "start": "node src/h2o-server.js",
+    "cli": "node src/cli.js",
     "test": "node test/test-h2o.js"
   },
   "dependencies": {

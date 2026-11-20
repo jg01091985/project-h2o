@@ -30,6 +30,17 @@ export class H2OAuthManager {
     return newKey;
   }
 
+  getActiveKey() {
+    if (process.env.H2O_INSTANCE_KEY) return process.env.H2O_INSTANCE_KEY;
+    try {
+      if (fs.existsSync(this.keyFilePath)) {
+        const diskKey = fs.readFileSync(this.keyFilePath, 'utf8').trim();
+        if (diskKey) return diskKey;
+      }
+    } catch (e) {}
+    return this.instanceKey;
+  }
+
   verifyRequest(req) {
     const authHeader = req.headers['authorization'];
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -37,9 +48,11 @@ export class H2OAuthManager {
     }
 
     const token = authHeader.split(' ')[1];
+    const activeKey = this.getActiveKey();
+
     try {
-      const providedBuffer = Buffer.from(token);
-      const expectedBuffer = Buffer.from(this.instanceKey);
+      const providedBuffer = Buffer.from(token.trim());
+      const expectedBuffer = Buffer.from(activeKey.trim());
 
       if (providedBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(providedBuffer, expectedBuffer)) {
         return { authorized: false, reason: 'Invalid H2O instance access key.' };

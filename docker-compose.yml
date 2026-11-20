@@ -1,11 +1,9 @@
-version: '3.8'
-
 services:
   h2o-ai:
     build: .
-    container-name: h2o-ai-inference
+    container_name: h2o-ai-inference
     ports:
-      - "3000:3000"
+      - "37719:3000"
     environment:
       - PORT=3000
       - H2O_DEBUG=true
@@ -14,4 +12,5 @@ services:
     volumes:
       - ./.browser-profile:/app/.browser-profile
       - ./.h2o-memory.json:/app/.h2o-memory.json
+      - ./.h2o-instance-key:/app/.h2o-instance-key
     restart: unless-stopped
