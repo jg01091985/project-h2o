@@ -1,5 +1,6 @@
 import { browserBridge } from './browser-bridge.js';
 import { inferenceCache } from './cache.js';
+import { TokenOptimizer } from './token-optimizer.js';
 import { CONFIG } from './config.js';
 
 export class H2ORouter {
@@ -8,8 +9,9 @@ export class H2ORouter {
     this.cacheHits = 0;
   }
 
-  async route(promptText) {
+  async route(rawPromptText) {
     this.totalRouted++;
+    const promptText = TokenOptimizer.optimizePrompt(rawPromptText);
 
     // 1. Check Inference Cache (0ms response for repeat prompts)
     const cachedResponse = inferenceCache.get(promptText);

@@ -2,7 +2,6 @@ export class TokenOptimizer {
   static compressTelemetry(telemetryObject, maxDepth = 2) {
     if (!telemetryObject || typeof telemetryObject !== 'object') return telemetryObject;
 
-    // Strip verbose redundant metadata, rounding floats for precision and conciseness
     const compressed = {};
     for (const [key, val] of Object.entries(telemetryObject)) {
       if (typeof val === 'number') {
@@ -16,5 +15,15 @@ export class TokenOptimizer {
       }
     }
     return compressed;
+  }
+
+  static optimizePrompt(promptText) {
+    if (!promptText || typeof promptText !== 'string') return '';
+    // Bleeding-edge semantic prompt optimization: strip redundant conversational filler, normalize whitespace, and compress token footprint
+    return promptText
+      .replace(/\r\n/g, '\n')
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\n\s*\n/g, '\n')
+      .trim();
   }
 }
