@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
-  h2o-copilot:
+  h2o-ai:
     build: .
-    container-name: h2o-copilot-inference
+    container-name: h2o-ai-inference
     ports:
       - "3000:3000"
     environment:

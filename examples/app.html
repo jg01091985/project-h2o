@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>H2O Copilot Web App Demo</title>
+  <title>H2O AI Web App Demo</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
     .container { width: 100%; max-width: 700px; background: #1e293b; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column; height: 600px; border: 1px solid #334155; }
@@ -25,23 +25,23 @@
 
   <div class="container">
     <header>
-      <h1>H2O Copilot Web App Demo</h1>
+      <h1>H2O AI Web App Demo</h1>
       <div id="status-badge">Connected</div>
     </header>
     <div id="chat-box">
-      <div class="message assistant">Hello! I am H2O Copilot, your universal API-less AI assistant. How can I assist your web application today?</div>
+      <div class="message assistant">Hello! I am H2O AI, your universal API-less AI assistant. How can I assist your web application today?</div>
     </div>
     <div class="input-area">
-      <input type="text" id="user-input" placeholder="Ask copilot anything or request system status..." autofocus>
+      <input type="text" id="user-input" placeholder="Ask AI anything or request system status..." autofocus>
       <button id="send-btn">Send</button>
     </div>
   </div>
 
   <script type="module">
-    import { H2OCopilotClient } from '/src/client.js';
+    import { H2OClient } from '/src/client.js';
 
     const endpoint = '/v1/copilot';
-    const copilot = new H2OCopilotClient(endpoint);
+    const client = new H2OClient(endpoint);
 
     const chatBox = document.getElementById('chat-box');
     const userInput = document.getElementById('user-input');
@@ -58,6 +58,7 @@
       userDiv.className = 'message user';
       userDiv.textContent = text;
       chatBox.appendChild(userDiv);
+
       userInput.value = '';
       chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -65,7 +66,7 @@
       statusBadge.style.background = '#d97706';
       statusBadge.style.color = '#fef3c7';
 
-      const response = await copilot.ask(text, 'You are H2O Copilot for web apps.', messages);
+      const response = await client.ask(text, 'You are H2O AI for web apps.', messages);
 
       messages.push({ role: 'user', content: text });
       messages.push({ role: 'assistant', content: response.content });

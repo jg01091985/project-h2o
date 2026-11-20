@@ -2,10 +2,10 @@ import assert from 'assert';
 import { spawn } from 'child_process';
 import puppeteer from 'puppeteer';
 
-console.log('Starting Real Web App Browser Integration Test for H2O Copilot...');
+console.log('Starting Real Web App Browser Integration Test for H2O AI...');
 
-// Start H2O Copilot Backend Server (which now also serves static web app files)
-const serverProcess = spawn('node', ['src/h2o-copilot-server.js'], {
+// Start H2O AI Backend Server (which now also serves static web app files)
+const serverProcess = spawn('node', ['src/h2o-server.js'], {
   env: { ...process.env, DEBUG: 'true', HYDROGEN_USE_SDK: 'false' },
   stdio: 'pipe'
 });
@@ -34,7 +34,7 @@ async function runWebAppTest() {
   }
 
   if (!serverStarted || !activePort) {
-    console.error('H2O Copilot server failed to start within timeout.');
+    console.error('H2O AI server failed to start within timeout.');
     serverProcess.kill();
     process.exit(1);
   }

@@ -6,7 +6,7 @@ import { spawn } from 'child_process';
 
 console.log('Starting H2O Inference Server Concurrency & Stress Test (10 Parallel Requests)...');
 
-const serverProcess = spawn('node', ['src/h2o-copilot-server.js'], {
+const serverProcess = spawn('node', ['src/h2o-server.js'], {
   env: { ...process.env, DEBUG: 'false', H2O_POOL_SIZE: '3' },
   stdio: 'pipe'
 });

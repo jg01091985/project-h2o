@@ -1,11 +1,11 @@
 {
-  "name": "h2o-copilot",
+  "name": "h2o-ai",
   "version": "1.0.0",
-  "description": "Universal API-less browser-bridged copilot engine for web applications (backed by Google free web AI)",
+  "description": "Universal API-less browser-bridged AI inference server and drop-in gateway (backed by Google free web AI)",
   "type": "module",
-  "main": "src/h2o-copilot-server.js",
+  "main": "src/h2o-server.js",
   "scripts": {
-    "start": "node src/h2o-copilot-server.js",
+    "start": "node src/h2o-server.js",
     "test": "node test/test-h2o.js"
   },
   "dependencies": {
@@ -21,6 +21,6 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "author": "Project H2O Contributors",
+  "author": "Project H2O",
   "license": "MIT"
 }

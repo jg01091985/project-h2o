@@ -4,7 +4,7 @@ import { spawn } from 'child_process';
 
 console.log('Starting Clean Live Integration Verification for H2O Inference Server...');
 
-const serverProcess = spawn('node', ['src/h2o-copilot-server.js'], {
+const serverProcess = spawn('node', ['src/h2o-server.js'], {
   env: { ...process.env, DEBUG: 'true', H2O_INSTANCE_KEY: 'h2o_live_test_key' },
   stdio: 'pipe'
 });

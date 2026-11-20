@@ -7,7 +7,7 @@ import { spawn } from 'child_process';
 console.log('Starting Real Token & End-to-End Inference Server Verification...');
 
 // Start H2O Inference Server
-const serverProcess = spawn('node', ['src/h2o-copilot-server.js'], {
+const serverProcess = spawn('node', ['src/h2o-server.js'], {
   env: { ...process.env, DEBUG: 'true' },
   stdio: 'pipe'
 });

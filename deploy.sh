@@ -8,6 +8,6 @@ if [ -z "$H2O_INSTANCE_KEY" ]; then
   exit 1
 fi
 
-echo "[H2O Deployment] Initializing H2O Copilot Inference Server..."
+echo "[H2O Deployment] Initializing H2O AI Inference Server..."
 npm install
 npm start

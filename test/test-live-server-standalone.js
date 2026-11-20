@@ -9,7 +9,7 @@ async function sleep(ms) {
 
 async function runLiveTest() {
   console.log('[H2O Standalone Test] Starting H2O Inference Server process...');
-  const serverProcess = spawn('node', ['src/h2o-copilot-server.js'], {
+  const serverProcess = spawn('node', ['src/h2o-server.js'], {
     env: { ...process.env, PORT: '39999', H2O_HEADLESS: 'true' },
     stdio: ['ignore', 'pipe', 'pipe']
   });

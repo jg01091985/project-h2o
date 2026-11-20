@@ -29,7 +29,7 @@ class SelfEvolvingEngine {
 
   getEvolutionReport() {
     return {
-      module: 'h2o-copilot',
+      module: 'h2o-ai',
       totalMutations: this.mutationLog.length,
       mutations: this.mutationLog
     };

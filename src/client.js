@@ -1,9 +1,9 @@
 /**
- * H2O Copilot Frontend Client
+ * H2O AI Frontend Client
  * Drop-in frontend library for web applications.
  */
-export class H2OCopilotClient {
-  constructor(endpoint = 'http://localhost:4050/v1/copilot', timeoutMs = 30000) {
+export class H2OClient {
+  constructor(endpoint = 'http://localhost:3000/v1/chat/completions', timeoutMs = 30000) {
     this.endpoint = endpoint;
     this.timeoutMs = timeoutMs;
   }
@@ -13,15 +13,20 @@ export class H2OCopilotClient {
     const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
 
     try {
-      const payloadMessages = [...messages, { role: 'user', content: prompt }];
+      const payloadMessages = [];
+      if (systemInstruction) {
+        payloadMessages.push({ role: 'system', content: systemInstruction });
+      }
+      payloadMessages.push(...messages, { role: 'user', content: prompt });
+
       const response = await fetch(this.endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          messages: payloadMessages,
-          system: systemInstruction
+          model: 'gemini-4-hydrogen',
+          messages: payloadMessages
         }),
         signal: controller.signal
       });
@@ -29,20 +34,30 @@ export class H2OCopilotClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(`H2O Copilot HTTP error! status: ${response.status}`);
+        throw new Error(`H2O AI HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      return data;
+      const choice = data.choices?.[0];
+      return {
+        role: choice?.message?.role || 'assistant',
+        content: choice?.message?.content || '',
+        engine: data.h2o_routing?.engine || 'browser-bridge',
+        cached: data.h2o_routing?.cached || false,
+        success: true
+      };
     } catch (err) {
       clearTimeout(timeoutId);
       const errorMessage = err.name === 'AbortError' ? 'Request timed out after ' + this.timeoutMs + 'ms' : err.message;
       console.error('[H2O Client Error]', errorMessage);
       return {
         role: 'assistant',
-        content: `Error connecting to H2O Copilot: ${errorMessage}`,
+        content: `Error connecting to H2O AI: ${errorMessage}`,
         success: false
       };
     }
   }
 }
+
+// Backwards compatibility alias
+export class H2OCopilotClient extends H2OClient {}
