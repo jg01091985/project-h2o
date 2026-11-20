@@ -3,7 +3,7 @@ import assert from 'assert';
 import { spawn } from 'child_process';
 import { authManager } from '../src/auth.js';
 
-console.log('Starting H2O Inference Server Authentication & Compatibility Tests...');
+console.log('Starting H2O AI Inference Server Authentication, Models & Streaming Tests...');
 
 const serverProcess = spawn('node', ['src/h2o-server.js'], {
   env: { ...process.env, DEBUG: 'true', H2O_INSTANCE_KEY: 'h2o_live_test_secret_key_123' },
@@ -85,7 +85,10 @@ async function runTests() {
     'Authorization': 'Bearer h2o_live_test_secret_key_123'
   }, {
     model: 'gemini-4-hydrogen',
-    messages: [{ role: 'user', content: 'Give status telemetry.' }]
+    messages: [
+      { role: 'system', content: 'You are a helpful assistant.' },
+      { role: 'user', content: 'Give status telemetry.' }
+    ]
   });
   console.log('OpenAI-Compatible Status (Expected 200):', authRes.statusCode);
   console.log('OpenAI-Compatible Response Body:', JSON.stringify(authRes.body, null, 2));
@@ -93,8 +96,55 @@ async function runTests() {
   assert.strictEqual(authRes.body.object, 'chat.completion');
   assert(authRes.body.choices[0].message.content.length > 0);
 
+  // Test 3: GET /v1/models
+  const modelsRes = await makeRequest(activePort, 'GET', '/v1/models', {
+    'Authorization': 'Bearer h2o_live_test_secret_key_123'
+  });
+  console.log('GET /v1/models Status (Expected 200):', modelsRes.statusCode);
+  assert.strictEqual(modelsRes.statusCode, 200);
+  assert.strictEqual(modelsRes.body.object, 'list');
+  assert(modelsRes.body.data.length > 0);
+
+  // Test 4: Streaming POST /v1/chat/completions (stream: true)
+  const streamRes = await new Promise((resolve, reject) => {
+    const dataStr = JSON.stringify({
+      model: 'gemini-4-hydrogen',
+      messages: [{ role: 'user', content: 'Stream test' }],
+      stream: true
+    });
+    const req = http.request({
+      hostname: 'localhost',
+      port: activePort,
+      path: '/v1/chat/completions',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer h2o_live_test_secret_key_123',
+        'Content-Length': Buffer.byteLength(dataStr)
+      }
+    }, (res) => {
+      let rawData = '';
+      res.on('data', chunk => rawData += chunk);
+      res.on('end', () => {
+        resolve({
+          statusCode: res.statusCode,
+          headers: res.headers,
+          body: rawData
+        });
+      });
+    });
+    req.on('error', reject);
+    req.write(dataStr);
+    req.end();
+  });
+
+  console.log('Streaming POST Status (Expected 200):', streamRes.statusCode);
+  assert.strictEqual(streamRes.statusCode, 200);
+  assert(streamRes.body.includes('data: '));
+  assert(streamRes.body.includes('[DONE]'));
+
   console.log('\n==================================================');
-  console.log('ALL INFERENCE SERVER & AUTH TESTS PASSED!');
+  console.log('ALL INFERENCE SERVER, MODELS & STREAMING TESTS PASSED!');
   console.log('==================================================');
 
   serverProcess.kill();

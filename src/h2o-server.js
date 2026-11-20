@@ -107,16 +107,60 @@ app.get('/v1/benchmark', authenticate, (req, res) => {
   });
 });
 
+// OpenAI-Compatible Models Endpoint (Authenticated)
+app.get('/v1/models', authenticate, (req, res) => {
+  res.json({
+    object: 'list',
+    data: [
+      {
+        id: CONFIG.GEMINI_MODEL,
+        object: 'model',
+        created: 1700000000,
+        owned_by: 'h2o-ai'
+      },
+      {
+        id: 'gpt-4',
+        object: 'model',
+        created: 1700000000,
+        owned_by: 'h2o-ai'
+      },
+      {
+        id: 'gpt-3.5-turbo',
+        object: 'model',
+        created: 1700000000,
+        owned_by: 'h2o-ai'
+      }
+    ]
+  });
+});
+
+app.get('/v1/models/:model', authenticate, (req, res) => {
+  const modelId = req.params.model;
+  res.json({
+    id: modelId,
+    object: 'model',
+    created: 1700000000,
+    owned_by: 'h2o-ai'
+  });
+});
+
 // Standard H2O Copilot REST endpoint
 app.post('/v1/copilot', authenticate, async (req, res) => {
   try {
     const { messages } = req.body;
-    const lastUserMessage = messages?.[messages.length - 1]?.content || '';
+    const systemMsg = messages?.find(m => m.role === 'system')?.content || '';
+    const userMsgs = messages?.filter(m => m.role === 'user') || [];
+    const lastUserMessage = userMsgs[userMsgs.length - 1]?.content || messages?.[messages.length - 1]?.content || '';
+
+    let promptToSend = lastUserMessage;
+    if (systemMsg) {
+      promptToSend = `[System Instruction: ${systemMsg}]\n\nUser: ${lastUserMessage}`;
+    }
 
     memoryLedger.append('user', lastUserMessage);
 
     if (CONFIG.DEBUG) console.log('[H2O Server] Routing through Intelligent H2O Router...');
-    const result = await h2oRouter.route(lastUserMessage);
+    const result = await h2oRouter.route(promptToSend);
     memoryLedger.append('assistant', result.content, { engine: result.engine, cached: result.cached });
 
     return res.json({
@@ -135,14 +179,49 @@ app.post('/v1/copilot', authenticate, async (req, res) => {
 // OpenAI-Compatible Chat Completions Endpoint (Drop-in replacement for standard LLM inference)
 app.post('/v1/chat/completions', authenticate, async (req, res) => {
   try {
-    const { messages, model } = req.body;
-    const lastUserMessage = messages?.[messages.length - 1]?.content || '';
+    const { messages, model, stream } = req.body;
+    const systemMsg = messages?.find(m => m.role === 'system')?.content || '';
+    const userMsgs = messages?.filter(m => m.role === 'user') || [];
+    const lastUserMessage = userMsgs[userMsgs.length - 1]?.content || messages?.[messages.length - 1]?.content || '';
+
+    let promptToSend = lastUserMessage;
+    if (systemMsg) {
+      promptToSend = `[System Instruction: ${systemMsg}]\n\nUser: ${lastUserMessage}`;
+    }
 
     memoryLedger.append('user', lastUserMessage);
 
     if (CONFIG.DEBUG) console.log('[H2O Inference Server] Processing OpenAI-compatible chat completion via H2O Router...');
-    const result = await h2oRouter.route(lastUserMessage);
+    const result = await h2oRouter.route(promptToSend);
     memoryLedger.append('assistant', result.content, { engine: result.engine, cached: result.cached });
+
+    if (stream) {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+
+      const chunkId = 'h2o-chat-' + Date.now();
+      const created = Math.floor(Date.now() / 1000);
+      const activeModel = model || CONFIG.GEMINI_MODEL;
+
+      res.write(`data: ${JSON.stringify({
+        id: chunkId,
+        object: 'chat.completion.chunk',
+        created,
+        model: activeModel,
+        choices: [{ index: 0, delta: { role: 'assistant', content: result.content }, finish_reason: null }]
+      })}\n\n`);
+
+      res.write(`data: ${JSON.stringify({
+        id: chunkId,
+        object: 'chat.completion.chunk',
+        created,
+        model: activeModel,
+        choices: [{ index: 0, delta: {}, finish_reason: 'stop' }]
+      })}\n\n`);
+      res.write('data: [DONE]\n\n');
+      return res.end();
+    }
 
     return res.json({
       id: 'h2o-chat-' + Date.now(),
