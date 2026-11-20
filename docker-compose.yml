@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  h2o-copilot:
+    build: .
+    container-name: h2o-copilot-inference
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - H2O_DEBUG=true
+      - HEADLESS=true
+      - H2O_INSTANCE_KEY=${H2O_INSTANCE_KEY}
+    volumes:
+      - ./.browser-profile:/app/.browser-profile
+      - ./.h2o-memory.json:/app/.h2o-memory.json
+    restart: unless-stopped
