@@ -5,8 +5,18 @@ export class RateLimiter {
     this.clients = new Map();
   }
 
+  pruneStale(now) {
+    for (const [ip, client] of this.clients.entries()) {
+      if (now - client.startTime > this.windowMs * 2) {
+        this.clients.delete(ip);
+      }
+    }
+  }
+
   check(ip) {
     const now = Date.now();
+    this.pruneStale(now);
+
     if (!this.clients.has(ip)) {
       this.clients.set(ip, { count: 1, startTime: now });
       return { allowed: true };

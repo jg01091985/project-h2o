@@ -11,20 +11,26 @@ export class InferenceCache {
     return crypto.createHash('sha256').update(prompt.trim().toLowerCase()).digest('hex');
   }
 
+  pruneStale() {
+    const now = Date.now();
+    for (const [key, entry] of this.store.entries()) {
+      if (now - entry.timestamp > this.ttlMs) {
+        this.store.delete(key);
+      }
+    }
+  }
+
   get(prompt) {
+    this.pruneStale();
     const key = this.generateHash(prompt);
     if (!this.store.has(key)) return null;
 
     const entry = this.store.get(key);
-    if (Date.now() - entry.timestamp > this.ttlMs) {
-      this.store.delete(key);
-      return null;
-    }
-
     return entry.response;
   }
 
   set(prompt, response) {
+    this.pruneStale();
     const key = this.generateHash(prompt);
     if (this.store.size >= this.maxSize) {
       const oldestKey = this.store.keys().next().value;

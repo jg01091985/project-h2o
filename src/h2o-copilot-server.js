@@ -1,6 +1,7 @@
 import express from 'express';
 import http from 'http';
 import path from 'path';
+import { URL } from 'url';
 import { WebSocketServer } from 'ws';
 import { CONFIG } from './config.js';
 import { browserBridge } from './browser-bridge.js';
@@ -11,6 +12,7 @@ import { memoryLedger } from './memory-ledger.js';
 import { TokenOptimizer } from './token-optimizer.js';
 import { authManager } from './auth.js';
 import { h2oRouter } from './router.js';
+import { rateLimiter } from './rate-limiter.js';
 
 const app = express();
 app.use(express.json());
@@ -28,6 +30,19 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
+  }
+  next();
+});
+
+// Global Rate Limiter Middleware for /v1/ routes
+app.use('/v1/', (req, res, next) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  const limitCheck = rateLimiter.check(ip);
+  if (!limitCheck.allowed) {
+    return res.status(429).json({
+      error: { message: 'Rate limit exceeded. Try again later.', type: 'rate_limit_error', code: 429 },
+      retryAfter: limitCheck.retryAfter
+    });
   }
   next();
 });
@@ -137,13 +152,29 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ noServer: true });
 
 server.on('upgrade', (request, socket, head) => {
-  wss.handleUpgrade(request, socket, head, (ws) => {
-    wss.emit('connection', ws, request);
-  });
+  try {
+    const parsedUrl = new URL(request.url, `http://${request.headers.host}`);
+    const token = parsedUrl.searchParams.get('token');
+    const authHeader = token ? `Bearer ${token}` : null;
+    const authResult = authManager.verifyRequest({ headers: { authorization: authHeader } });
+
+    if (!authResult.authorized) {
+      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  } catch (err) {
+    socket.write('HTTP/1.1 500 Internal Server Error\r\n\r\n');
+    socket.destroy();
+  }
 });
 
 wss.on('connection', (ws) => {
-  if (CONFIG.DEBUG) console.log('[H2O WS] Client connected');
+  if (CONFIG.DEBUG) console.log('[H2O WS] Client connected (Authenticated)');
 
   ws.on('message', async (data) => {
     try {
@@ -163,7 +194,7 @@ wss.on('connection', (ws) => {
     }
   });
 
-  wss.on('close', () => {
+  ws.on('close', () => {
     if (CONFIG.DEBUG) console.log('[H2O WS] Client disconnected');
   });
 });
