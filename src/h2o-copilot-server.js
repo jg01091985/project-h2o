@@ -14,6 +14,7 @@ import { authManager } from './auth.js';
 import { h2oRouter } from './router.js';
 import { rateLimiter } from './rate-limiter.js';
 import { auditLogger } from './audit-logger.js';
+import { quantumBenchmark } from './quantum-benchmark.js';
 
 const app = express();
 app.use(express.json());
@@ -93,6 +94,15 @@ app.get('/v1/metrics', authenticate, (req, res) => {
   res.json({
     status: 'ok',
     metrics: h2oRouter.getMetrics(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Quantum Benchmark Audit Endpoint (Authenticated)
+app.get('/v1/benchmark', authenticate, (req, res) => {
+  res.json({
+    status: 'ok',
+    audit: quantumBenchmark.runAudit(),
     timestamp: new Date().toISOString()
   });
 });
