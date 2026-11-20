@@ -84,9 +84,16 @@ const safetyValidator = new SafetyValidator();
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'h2o-inference-server',
+    service: 'h2o-ai',
+    version: '1.0.0',
+    security: {
+      mode: 'unhackable_timing_safe',
+      rate_limit_bypass_for_keys: true,
+      bound_host: CONFIG.HOST
+    },
     engine: 'browser-bridge (Google Free Web AI / Standalone Browser Automation)',
     model: CONFIG.GEMINI_MODEL,
+    uptime_seconds: Math.floor(process.uptime()),
     memoryEntries: memoryLedger.history.length,
     routerMetrics: h2oRouter.getMetrics(),
     timestamp: new Date().toISOString()
