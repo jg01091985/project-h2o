@@ -6,17 +6,20 @@
   <title>H2O AI Web App Demo</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
-    .container { width: 100%; max-width: 700px; background: #1e293b; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column; height: 600px; border: 1px solid #334155; }
-    header { background: #0f172a; padding: 20px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
-    header h1 { margin: 0; font-size: 1.25rem; font-weight: 600; color: #38bdf8; }
-    #status-badge { font-size: 0.85rem; padding: 4px 10px; border-radius: 12px; background: #065f46; color: #34d399; }
+    .container { width: 100%; max-width: 750px; background: #1e293b; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column; height: 600px; border: 1px solid #334155; }
+    header { background: #0f172a; padding: 15px 20px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; font-size: 1.15rem; font-weight: 600; color: #38bdf8; }
+    .header-controls { display: flex; gap: 10px; align-items: center; }
+    #api-key-input { padding: 6px 10px; border-radius: 6px; border: 1px solid #475569; background: #1e293b; color: white; font-size: 0.8rem; width: 200px; outline: none; }
+    #api-key-input:focus { border-color: #38bdf8; }
+    #status-badge { font-size: 0.8rem; padding: 4px 10px; border-radius: 12px; background: #065f46; color: #34d399; }
     #chat-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
     .message { padding: 12px 16px; border-radius: 8px; max-width: 80%; line-height: 1.5; font-size: 0.95rem; }
     .user { background: #0284c7; color: white; align-self: flex-end; }
     .assistant { background: #334155; color: #f1f5f9; align-self: flex-start; border: 1px solid #475569; }
     .input-area { padding: 20px; background: #0f172a; border-top: 1px solid #334155; display: flex; gap: 10px; }
-    input { flex: 1; padding: 12px 16px; border-radius: 8px; border: 1px solid #475569; background: #1e293b; color: white; font-size: 1rem; outline: none; }
-    input:focus { border-color: #38bdf8; }
+    input.text-input { flex: 1; padding: 12px 16px; border-radius: 8px; border: 1px solid #475569; background: #1e293b; color: white; font-size: 1rem; outline: none; }
+    input.text-input:focus { border-color: #38bdf8; }
     button { padding: 12px 24px; border-radius: 8px; background: #0284c7; color: white; border: none; font-weight: 600; cursor: pointer; transition: background 0.2s; }
     button:hover { background: #0369a1; }
   </style>
@@ -26,13 +29,16 @@
   <div class="container">
     <header>
       <h1>H2O AI Web App Demo</h1>
-      <div id="status-badge">Connected</div>
+      <div class="header-controls">
+        <input type="password" id="api-key-input" placeholder="API Key (h2o_...)" value="h2o_3508Jmx4012C03HfEqd7eUr3Ba1iMu5LBnNsAL1SpkI" title="H2O AI Instance Access Key">
+        <div id="status-badge">Connected</div>
+      </div>
     </header>
     <div id="chat-box">
       <div class="message assistant">Hello! I am H2O AI, your universal API-less AI assistant. How can I assist your web application today?</div>
     </div>
     <div class="input-area">
-      <input type="text" id="user-input" placeholder="Ask AI anything or request system status..." autofocus>
+      <input type="text" class="text-input" id="user-input" placeholder="Ask AI anything or request system status..." autofocus>
       <button id="send-btn">Send</button>
     </div>
   </div>
@@ -40,8 +46,13 @@
   <script type="module">
     import { H2OClient } from '/src/client.js';
 
-    const endpoint = '/v1/copilot';
-    const client = new H2OClient(endpoint);
+    const apiKeyInput = document.getElementById('api-key-input');
+    const endpoint = '/v1/chat/completions';
+    const client = new H2OClient(endpoint, apiKeyInput.value);
+
+    apiKeyInput.addEventListener('input', () => {
+      client.apiKey = apiKeyInput.value.trim();
+    });
 
     const chatBox = document.getElementById('chat-box');
     const userInput = document.getElementById('user-input');

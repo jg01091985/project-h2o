@@ -3,8 +3,9 @@
  * Drop-in frontend library for web applications.
  */
 export class H2OClient {
-  constructor(endpoint = 'http://localhost:3000/v1/chat/completions', timeoutMs = 30000) {
+  constructor(endpoint = '/v1/chat/completions', apiKey = '', timeoutMs = 30000) {
     this.endpoint = endpoint;
+    this.apiKey = apiKey;
     this.timeoutMs = timeoutMs;
   }
 
@@ -19,11 +20,16 @@ export class H2OClient {
       }
       payloadMessages.push(...messages, { role: 'user', content: prompt });
 
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (this.apiKey) {
+        headers['Authorization'] = `Bearer ${this.apiKey}`;
+      }
+
       const response = await fetch(this.endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({
           model: 'gemini-4-hydrogen',
           messages: payloadMessages
