@@ -5,6 +5,8 @@ export class MemoryLedger {
   constructor(storagePath = path.resolve(process.cwd(), '.h2o-memory.json')) {
     this.storagePath = storagePath;
     this.history = [];
+    this.isSaving = false;
+    this.saveQueued = false;
     this.load();
   }
 
@@ -19,10 +21,24 @@ export class MemoryLedger {
     }
   }
 
-  save() {
+  async save() {
+    if (this.isSaving) {
+      this.saveQueued = true;
+      return;
+    }
+    this.isSaving = true;
+
     try {
-      fs.writeFileSync(this.storagePath, JSON.stringify(this.history, null, 2), 'utf8');
-    } catch (e) {}
+      const payload = JSON.stringify(this.history, null, 2);
+      await fs.promises.writeFile(this.storagePath, payload, 'utf8');
+    } catch (e) {
+    } finally {
+      this.isSaving = false;
+      if (this.saveQueued) {
+        this.saveQueued = false;
+        this.save();
+      }
+    }
   }
 
   append(role, content, metadata = {}) {
@@ -32,7 +48,6 @@ export class MemoryLedger {
       metadata,
       timestamp: new Date().toISOString()
     });
-    // Keep last 100 turns for optimal context window
     if (this.history.length > 100) {
       this.history = this.history.slice(-100);
     }
