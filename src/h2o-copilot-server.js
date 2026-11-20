@@ -13,6 +13,7 @@ import { TokenOptimizer } from './token-optimizer.js';
 import { authManager } from './auth.js';
 import { h2oRouter } from './router.js';
 import { rateLimiter } from './rate-limiter.js';
+import { auditLogger } from './audit-logger.js';
 
 const app = express();
 app.use(express.json());
@@ -31,6 +32,22 @@ app.use((req, res, next) => {
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
+  next();
+});
+
+// Audit Logging Middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    auditLogger.log({
+      method: req.method,
+      url: req.originalUrl,
+      status: res.statusCode,
+      durationMs: duration,
+      ip: req.ip || req.connection.remoteAddress
+    });
+  });
   next();
 });
 
@@ -218,3 +235,20 @@ server.listen(portToListen, () => {
     console.error('[H2O Server Fatal Error]', err);
   }
 });
+
+// Graceful Shutdown Handling
+const shutdown = async () => {
+  console.log('\n[H2O Inference Server] Shutting down gracefully...');
+  try {
+    if (browserBridge.browser) {
+      await browserBridge.browser.close();
+    }
+  } catch (e) {}
+  server.close(() => {
+    console.log('[H2O Inference Server] Closed all server connections.');
+    process.exit(0);
+  });
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
