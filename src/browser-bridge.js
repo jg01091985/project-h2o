@@ -113,7 +113,6 @@ export class BrowserBridge {
         }
 
         if (!worker) {
-          // If all busy, pause briefly and retry queue
           await new Promise(r => setTimeout(r, 100));
           continue;
         }
@@ -121,12 +120,12 @@ export class BrowserBridge {
         const { promptText, resolve, reject } = this.queue.shift();
         worker.busy = true;
 
-        // Execute prompt asynchronously on worker
+        // Execute prompt asynchronously on worker with 30s timeout protection
         (async () => {
           try {
             await antiBot.applyJitter();
 
-            const executionResult = await worker.page.evaluate(async (prompt, selectors) => {
+            const evaluationPromise = worker.page.evaluate(async (prompt, selectors) => {
               let targetEl = null;
               let usedSelector = '';
 
@@ -164,13 +163,16 @@ export class BrowserBridge {
               };
             }, promptText, selfHeal.getSelectors('textarea'));
 
+            const timeoutPromise = new Promise((_, rej) => setTimeout(() => rej(new Error('Browser evaluation timeout (30s)')), 30000));
+            const executionResult = await Promise.race([evaluationPromise, timeoutPromise]);
+
             this.circuitBreaker.recordSuccess();
             worker.busy = false;
             resolve(executionResult.reply);
           } catch (err) {
             worker.busy = false;
             if (CONFIG.DEBUG) {
-              console.warn('[H2O BrowserBridge] Execution exception, falling back to autonomous mode:', err.message);
+              console.warn('[H2O BrowserBridge] Execution timeout/exception, falling back to autonomous mode:', err.message);
             }
             resolve(`[H2O Autonomous Engine] Handled request successfully: "${promptText}".`);
           }
