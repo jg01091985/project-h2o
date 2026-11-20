@@ -173,10 +173,7 @@ app.post('/v1/copilot', authenticate, async (req, res) => {
     const userMsgs = messages?.filter(m => m.role === 'user') || [];
     const lastUserMessage = userMsgs[userMsgs.length - 1]?.content || messages?.[messages.length - 1]?.content || '';
 
-    let promptToSend = lastUserMessage;
-    if (systemMsg) {
-      promptToSend = `[System Instruction: ${systemMsg}]\n\nUser: ${lastUserMessage}`;
-    }
+    const promptToSend = lastUserMessage;
 
     memoryLedger.append('user', lastUserMessage);
 
@@ -205,10 +202,7 @@ app.post('/v1/chat/completions', authenticate, async (req, res) => {
     const userMsgs = messages?.filter(m => m.role === 'user') || [];
     const lastUserMessage = userMsgs[userMsgs.length - 1]?.content || messages?.[messages.length - 1]?.content || '';
 
-    let promptToSend = lastUserMessage;
-    if (systemMsg) {
-      promptToSend = `[System Instruction: ${systemMsg}]\n\nUser: ${lastUserMessage}`;
-    }
+    const promptToSend = lastUserMessage;
 
     memoryLedger.append('user', lastUserMessage);
 
