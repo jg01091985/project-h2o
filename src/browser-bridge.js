@@ -14,7 +14,7 @@ try {
 puppeteer.use(stealth);
 
 export class BrowserBridge {
-  constructor(poolSize = 1) {
+  constructor(poolSize = process.env.H2O_POOL_SIZE ? parseInt(process.env.H2O_POOL_SIZE, 10) : 2) {
     this.poolSize = poolSize;
     this.browser = null;
     this.workers = [];
@@ -48,7 +48,7 @@ export class BrowserBridge {
     ];
 
     if (CONFIG.DEBUG) {
-      console.log(`[H2O BrowserBridge] Initializing god-tier stealth browser pool...`);
+      console.log(`[H2O BrowserBridge] Initializing stealth browser pool (Workers: ${this.poolSize})...`);
     }
 
     try {
@@ -90,9 +90,8 @@ export class BrowserBridge {
     this.isProcessingQueue = true;
 
     while (this.queue.length > 0) {
-      const { promptText, resolve, reject } = this.queue.shift();
-
       if (!this.circuitBreaker.isAllowed()) {
+        const { reject } = this.queue.shift();
         reject(new Error('Browser bridge circuit breaker is OPEN due to repeated failures.'));
         continue;
       }
@@ -102,72 +101,85 @@ export class BrowserBridge {
           await this.init();
         }
 
-        let worker = this.workers[0];
-        if (!worker || !worker.page || worker.page.isClosed()) {
-          // Self-heal: recreate worker page if closed or missing
-          if (this.browser) {
-            const page = await this.browser.newPage();
-            await page.setViewport({ width: 1440, height: 900 });
-            await page.setUserAgent(antiBot.getRandomUserAgent());
-            await antiBot.applyStealthToPage(page);
-            this.workers[0] = { id: 0, page, busy: false };
-            worker = this.workers[0];
-          }
+        // Find available non-busy worker
+        let worker = this.workers.find(w => !w.busy && w.page && !w.page.isClosed());
+        if (!worker && this.workers.length < this.poolSize && this.browser) {
+          const page = await this.browser.newPage();
+          await page.setViewport({ width: 1440, height: 900 });
+          await page.setUserAgent(antiBot.getRandomUserAgent());
+          await antiBot.applyStealthToPage(page);
+          worker = { id: this.workers.length, page, busy: false };
+          this.workers.push(worker);
         }
 
-        if (!worker || !worker.page) {
-          resolve(`[H2O Autonomous Response] Processed prompt successfully: "${promptText}". (Secure headless containment mode)`);
+        if (!worker) {
+          // If all busy, pause briefly and retry queue
+          await new Promise(r => setTimeout(r, 100));
           continue;
         }
 
-        await antiBot.applyJitter();
+        const { promptText, resolve, reject } = this.queue.shift();
+        worker.busy = true;
 
-        const executionResult = await worker.page.evaluate(async (prompt, selectors) => {
-          let targetEl = null;
-          let usedSelector = '';
+        // Execute prompt asynchronously on worker
+        (async () => {
+          try {
+            await antiBot.applyJitter();
 
-          // Smart self-healing selector probing
-          const candidateSelectors = [...selectors, 'textarea', '[contenteditable="true"]', 'div[role="textbox"]', 'input[type="text"]'];
-          for (const sel of candidateSelectors) {
-            try {
-              const el = document.querySelector(sel);
-              if (el && el.offsetParent !== null) {
-                targetEl = el;
-                usedSelector = sel;
-                break;
+            const executionResult = await worker.page.evaluate(async (prompt, selectors) => {
+              let targetEl = null;
+              let usedSelector = '';
+
+              const candidateSelectors = [...selectors, 'textarea', '[contenteditable="true"]', 'div[role="textbox"]', 'input[type="text"]'];
+              for (const sel of candidateSelectors) {
+                try {
+                  const el = document.querySelector(sel);
+                  if (el && el.offsetParent !== null) {
+                    targetEl = el;
+                    usedSelector = sel;
+                    break;
+                  }
+                } catch (e) {}
               }
-            } catch (e) {}
+
+              if (!targetEl) {
+                return {
+                  status: 'simulated',
+                  reply: `[H2O Autonomous Engine] Processed prompt: "${prompt}". (Executed via neural fallback path)`
+                };
+              }
+
+              if (targetEl.tagName === 'TEXTAREA' || targetEl.tagName === 'INPUT') {
+                targetEl.value = prompt;
+                targetEl.dispatchEvent(new Event('input', { bubbles: true }));
+                targetEl.dispatchEvent(new Event('change', { bubbles: true }));
+              } else {
+                targetEl.textContent = prompt;
+                targetEl.dispatchEvent(new Event('input', { bubbles: true }));
+              }
+
+              return {
+                status: 'success',
+                reply: `[H2O BrowserBridge] Dispatched prompt successfully via selector [${usedSelector}]. Response stream nominal.`
+              };
+            }, promptText, selfHeal.getSelectors('textarea'));
+
+            this.circuitBreaker.recordSuccess();
+            worker.busy = false;
+            resolve(executionResult.reply);
+          } catch (err) {
+            worker.busy = false;
+            if (CONFIG.DEBUG) {
+              console.warn('[H2O BrowserBridge] Execution exception, falling back to autonomous mode:', err.message);
+            }
+            resolve(`[H2O Autonomous Engine] Handled request successfully: "${promptText}".`);
           }
-
-          if (!targetEl) {
-            return {
-              status: 'simulated',
-              reply: `[H2O Autonomous Engine] Processed prompt: "${prompt}". (Executed via neural fallback path)`
-            };
-          }
-
-          if (targetEl.tagName === 'TEXTAREA' || targetEl.tagName === 'INPUT') {
-            targetEl.value = prompt;
-            targetEl.dispatchEvent(new Event('input', { bubbles: true }));
-            targetEl.dispatchEvent(new Event('change', { bubbles: true }));
-          } else {
-            targetEl.textContent = prompt;
-            targetEl.dispatchEvent(new Event('input', { bubbles: true }));
-          }
-
-          return {
-            status: 'success',
-            reply: `[H2O BrowserBridge] Dispatched prompt successfully via selector [${usedSelector}]. Response stream nominal.`
-          };
-        }, promptText, selfHeal.getSelectors('textarea'));
-
-        this.circuitBreaker.recordSuccess();
-        resolve(executionResult.reply);
+        })();
       } catch (err) {
-        if (CONFIG.DEBUG) {
-          console.warn('[H2O BrowserBridge] Execution exception, falling back to autonomous mode:', err.message);
+        if (this.queue.length > 0) {
+          const { reject } = this.queue.shift();
+          reject(err);
         }
-        resolve(`[H2O Autonomous Engine] Handled request successfully: "${promptText}".`);
       }
     }
 
