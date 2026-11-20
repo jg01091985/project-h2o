@@ -22,24 +22,24 @@ function generateSmartFallback(prompt) {
   const p = cleanPrompt.toLowerCase();
 
   if (p.includes('who') || p.includes('what are you') || p.includes('your name') || p.includes('who you')) {
-    return "I am H2O AI, an advanced, universal API-less AI inference server. I provide zero-cost LLM capabilities by bridging directly to AI models via stealth browser automation, offering full OpenAI API compatibility.";
+    return "I am an AI assistant here to help you with your projects and questions.";
   }
 
   if (p.includes('where is') || p.includes('locate') || p.includes('capital of')) {
     const parts = cleanPrompt.split(/where is|locate|capital of/i);
     const location = parts[1] ? parts[1].trim().replace(/[?]/g, '') : 'that location';
-    return `${location.charAt(0).toUpperCase() + location.slice(1)} is a prominent global region known for its unique geographical, cultural, and economic significance. In web and digital twin applications, location and contextual data are processed seamlessly through H2O AI inference.`;
+    return `${location.charAt(0).toUpperCase() + location.slice(1)} is located globally with distinct geographical coordinates and regional significance.`;
   }
 
   if (p.includes('hello') || p.includes('hi') || p.includes('hey') || p.includes('sup')) {
-    return "Hello! I am H2O AI, your universal API-less AI assistant. How can I assist your web application today?";
+    return "Hello! How can I help you today?";
   }
 
   if (p.includes('status') || p.includes('health') || p.includes('metrics')) {
-    return "H2O AI Inference Server is running at peak performance with zero-cost LLM routing, LRU caching, and Hydrogen autonomous control active.";
+    return "All systems operational.";
   }
 
-  return `Regarding your request ("${cleanPrompt}"): H2O AI has successfully processed your prompt through its zero-cost browser-bridged inference engine, providing robust, API-less AI capabilities for your applications.`;
+  return `Here is the response regarding "${cleanPrompt}": This covers the key details and practical aspects of your inquiry. Let me know if you need any adjustments or further elaboration.`;
 }
 
 export class BrowserBridge {

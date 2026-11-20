@@ -1,6 +1,7 @@
 import express from 'express';
 import http from 'http';
 import path from 'path';
+import fs from 'fs';
 import crypto from 'crypto';
 import { URL } from 'url';
 import { WebSocketServer } from 'ws';
@@ -20,11 +21,17 @@ import { hydrogenDaemon } from './hydrogen-daemon.js';
 
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(process.cwd(), 'examples')));
-app.use('/src', express.static(path.join(process.cwd(), 'src')));
+app.use(express.static(path.resolve(process.cwd())));
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'examples/app.html'));
+  try {
+    const htmlPath = path.join(process.cwd(), 'examples/app.html');
+    let html = fs.readFileSync(htmlPath, 'utf8');
+    html = html.replace('__H2O_API_KEY__', authManager.instanceKey);
+    res.send(html);
+  } catch (err) {
+    res.sendFile(path.join(process.cwd(), 'examples/app.html'));
+  }
 });
 
 // Enable CORS for frontend web applications
