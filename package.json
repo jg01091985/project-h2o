@@ -1,0 +1,26 @@
+{
+  "name": "h2o-copilot",
+  "version": "1.0.0",
+  "description": "API-less browser-bridged copilot engine for digital twins inspired by Project Hydrogen (backed by Google free web AI)",
+  "type": "module",
+  "main": "src/h2o-copilot-server.js",
+  "scripts": {
+    "start": "node src/h2o-copilot-server.js",
+    "test": "node test/test-h2o.js"
+  },
+  "dependencies": {
+    "@google/genai": "latest",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "puppeteer": "^22.6.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "Project H2O Contributors",
+  "license": "MIT"
+}
