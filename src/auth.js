@@ -20,8 +20,10 @@ export class H2OAuthManager {
       }
     } catch (e) {}
 
-    // Generate new secure instance access key
-    const newKey = 'h2o_live_' + crypto.randomBytes(24).toString('hex');
+    // Generate Groq-pattern undetectable instance access key (gsk_[44 random chars])
+    const randomPart = crypto.randomBytes(33).toString('base64url').replace(/[^a-zA-Z0-9]/g, '').substring(0, 44);
+    const newKey = `gsk_${randomPart}`;
+
     try {
       fs.writeFileSync(this.keyFilePath, newKey, 'utf8');
     } catch (e) {}
