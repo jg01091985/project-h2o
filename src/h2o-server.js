@@ -306,19 +306,20 @@ wss.on('connection', (ws) => {
 });
 
 const portToListen = process.env.PORT ? parseInt(process.env.PORT, 10) : CONFIG.PORT;
+const hostToBind = CONFIG.HOST;
 
-server.listen(portToListen, () => {
+server.listen(portToListen, hostToBind, () => {
   const assignedPort = server.address().port;
-  console.log(`[H2O Inference Server] Running on http://localhost:${assignedPort}`);
-  console.log(`[H2O Inference Server] Instance Access Key: ${authManager.instanceKey}`);
-  console.log(`[H2O Inference Server] OpenAI-Compatible Endpoint: http://localhost:${assignedPort}/v1/chat/completions`);
+  console.log(`[H2O AI Server] Running on http://localhost:${assignedPort} (Bound to ${hostToBind})`);
+  console.log(`[H2O AI Server] Instance Access Key: ${authManager.instanceKey}`);
+  console.log(`[H2O AI Server] OpenAI-Compatible Endpoint: http://localhost:${assignedPort}/v1/chat/completions`);
 }).on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    server.listen(0, () => {
+    server.listen(0, hostToBind, () => {
       const assignedPort = server.address().port;
-      console.log(`[H2O Inference Server] Running on http://localhost:${assignedPort}`);
-      console.log(`[H2O Inference Server] Instance Access Key: ${authManager.instanceKey}`);
-      console.log(`[H2O Inference Server] OpenAI-Compatible Endpoint: http://localhost:${assignedPort}/v1/chat/completions`);
+      console.log(`[H2O AI Server] Running on http://localhost:${assignedPort} (Bound to ${hostToBind})`);
+      console.log(`[H2O AI Server] Instance Access Key: ${authManager.instanceKey}`);
+      console.log(`[H2O AI Server] OpenAI-Compatible Endpoint: http://localhost:${assignedPort}/v1/chat/completions`);
     });
   } else {
     console.error('[H2O Server Fatal Error]', err);
