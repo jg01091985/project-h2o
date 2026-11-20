@@ -37,7 +37,14 @@ export class H2OAuthManager {
     }
 
     const token = authHeader.split(' ')[1];
-    if (token !== this.instanceKey) {
+    try {
+      const providedBuffer = Buffer.from(token);
+      const expectedBuffer = Buffer.from(this.instanceKey);
+
+      if (providedBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(providedBuffer, expectedBuffer)) {
+        return { authorized: false, reason: 'Invalid H2O instance access key.' };
+      }
+    } catch (err) {
       return { authorized: false, reason: 'Invalid H2O instance access key.' };
     }
 

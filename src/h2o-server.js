@@ -1,6 +1,7 @@
 import express from 'express';
 import http from 'http';
 import path from 'path';
+import crypto from 'crypto';
 import { URL } from 'url';
 import { WebSocketServer } from 'ws';
 import { CONFIG } from './config.js';
@@ -52,8 +53,20 @@ app.use((req, res, next) => {
   next();
 });
 
-// Global Rate Limiter Middleware for /v1/ routes
+// Global Rate Limiter & Security Guard Middleware for /v1/ routes (Valid key holders bypass rate limiting for full unthrottled performance)
 app.use('/v1/', (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    try {
+      const providedBuffer = Buffer.from(token);
+      const expectedBuffer = Buffer.from(authManager.instanceKey);
+      if (providedBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(providedBuffer, expectedBuffer)) {
+        return next();
+      }
+    } catch (e) {}
+  }
+
   const ip = req.ip || req.connection.remoteAddress;
   const limitCheck = rateLimiter.check(ip);
   if (!limitCheck.allowed) {
