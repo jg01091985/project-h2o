@@ -4,7 +4,7 @@ import { WebSocketServer } from 'ws';
 import { CONFIG } from './config.js';
 import { GeminiBridge } from './gemini-bridge.js';
 import { browserBridge } from './browser-bridge.js';
-import { TwinMCPRegistry } from './twin-mcp-registry.js';
+import { MCPRegistry } from './mcp-registry.js';
 import { SafetyValidator } from './safety-validator.js';
 import { H2OTranslator } from './translator.js';
 import { memoryLedger } from './memory-ledger.js';
@@ -13,7 +13,7 @@ import { TokenOptimizer } from './token-optimizer.js';
 const app = express();
 app.use(express.json());
 
-// Enable CORS for frontend web apps (kik-twin etc.)
+// Enable CORS for frontend web applications
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
@@ -25,7 +25,7 @@ app.use((req, res, next) => {
 });
 
 const geminiBridge = new GeminiBridge();
-const twinRegistry = new TwinMCPRegistry();
+const mcpRegistry = new MCPRegistry();
 const safetyValidator = new SafetyValidator();
 
 // Health check endpoint
@@ -49,7 +49,7 @@ app.post('/v1/copilot', async (req, res) => {
     memoryLedger.append('user', lastUserMessage);
 
     const translated = H2OTranslator.translateChatRequest({ messages, system });
-    const mcpTools = twinRegistry.getToolDeclarations();
+    const mcpTools = mcpRegistry.getToolDeclarations();
 
     // If API-less mode (Hydrogen browser bridge to Google Free Web AI)
     if (!CONFIG.USE_SDK || !CONFIG.GEMINI_API_KEY) {
@@ -65,7 +65,7 @@ app.post('/v1/copilot', async (req, res) => {
 
     // Otherwise SDK bridge
     const systemInstruction = translated.systemInstruction || {
-      parts: [{ text: 'You are H2O Copilot, an AI assistant embedded in digital twin projects like kik-twin. Be calm, clean, clear, and precise.' }]
+      parts: [{ text: 'You are H2O Copilot, a universal AI assistant embedded in web applications. Be calm, clean, clear, and precise.' }]
     };
 
     const response = await geminiBridge.generateContent(
@@ -90,7 +90,7 @@ app.post('/v1/copilot', async (req, res) => {
         });
       }
 
-      const toolResult = await twinRegistry.executeTool(name, args);
+      const toolResult = await mcpRegistry.executeTool(name, args);
       const compressedResult = TokenOptimizer.compressTelemetry(toolResult);
       const successReply = `Executed tool ${name} successfully. Result: ${JSON.stringify(compressedResult)}`;
 
@@ -142,14 +142,14 @@ wss.on('connection', (ws) => {
 
       const translated = H2OTranslator.translateChatRequest({ messages, system });
       const systemInstruction = translated.systemInstruction || {
-        parts: [{ text: 'You are H2O Copilot for digital twins. Be concise, calm, clear, precise.' }]
+        parts: [{ text: 'You are H2O Copilot for web applications. Be concise, calm, clear, precise.' }]
       };
 
       let accumulated = '';
       await geminiBridge.generateContentStream(
         translated.contents,
         systemInstruction,
-        twinRegistry.getToolDeclarations(),
+        mcpRegistry.getToolDeclarations(),
         (chunk) => {
           accumulated += chunk;
           ws.send(JSON.stringify({ type: 'chunk', text: chunk }));

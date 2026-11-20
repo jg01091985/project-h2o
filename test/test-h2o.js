@@ -1,6 +1,6 @@
 import assert from 'assert';
 import { SafetyValidator } from '../src/safety-validator.js';
-import { TwinMCPRegistry } from '../src/twin-mcp-registry.js';
+import { MCPRegistry } from '../src/mcp-registry.js';
 import { H2OTranslator } from '../src/translator.js';
 import { h2oVault } from '../src/vault.js';
 import { selfHeal } from '../src/self-heal.js';
@@ -14,15 +14,15 @@ console.log('Running Self-Healing, Self-Evolving & Self-Learning H2O Unit Tests.
 
 // 1. Safety Validator
 const validator = new SafetyValidator();
-assert.strictEqual(validator.validateAction('set_actuator_state', { actuatorId: 'valve-1', state: 'OPEN' }).allowed, true);
+assert.strictEqual(validator.validateAction('execute_action', { actionName: 'restart-service' }).allowed, true);
 assert.strictEqual(validator.validateAction('set_actuator_state', { actuatorId: 'core-override', state: 'OPEN' }).allowed, false);
 console.log('✓ Safety Validator tests passed');
 
-// 2. Twin MCP Registry
-const registry = new TwinMCPRegistry();
-registry.registerTool('custom_twin_diagnostic', 'Run diagnostics', { type: 'OBJECT' }, async () => ({ status: 'nominal' }));
-assert(registry.getToolDeclarations()[0].functionDeclarations.some(f => f.name === 'custom_twin_diagnostic'));
-console.log('✓ Twin MCP Registry tests passed');
+// 2. MCP Registry
+const registry = new MCPRegistry();
+registry.registerTool('custom_app_diagnostic', 'Run diagnostics', { type: 'OBJECT' }, async () => ({ status: 'nominal' }));
+assert(registry.getToolDeclarations()[0].functionDeclarations.some(f => f.name === 'custom_app_diagnostic'));
+console.log('✓ MCP Registry tests passed');
 
 // 3. Translator
 const translated = H2OTranslator.translateChatRequest({ messages: [{ role: 'user', content: 'Hi' }] });

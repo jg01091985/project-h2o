@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 
 export class H2OVault {
-  constructor(secretKey = 'h2o-secure-twin-master-key') {
+  constructor(secretKey = 'h2o-secure-master-key') {
     this.algorithm = 'aes-256-gcm';
     this.key = crypto.scryptSync(secretKey, 'salt', 32);
   }

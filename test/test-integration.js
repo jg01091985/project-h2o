@@ -90,7 +90,7 @@ async function runTests() {
   console.log('\n--- VERIFYING POST /v1/copilot (API-less Bridge) ---');
   const copilotRes = await makeRequest(activePort, 'POST', '/v1/copilot', {
     messages: [
-      { role: 'user', content: 'Give status telemetry for turbine-3 in kik-twin.' }
+      { role: 'user', content: 'Give status telemetry for application metrics.' }
     ]
   });
   console.log('Status:', copilotRes.statusCode);

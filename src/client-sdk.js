@@ -1,6 +1,6 @@
 /**
  * H2O Copilot Client SDK
- * Drop-in frontend library for web apps and digital twins (e.g. kik-twin).
+ * Drop-in frontend library for web applications.
  */
 export class H2OCopilotClient {
   constructor(endpoint = 'http://localhost:4050/v1/copilot') {

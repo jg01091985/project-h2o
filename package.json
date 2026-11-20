@@ -1,7 +1,7 @@
 {
   "name": "h2o-copilot",
   "version": "1.0.0",
-  "description": "API-less browser-bridged copilot engine for digital twins inspired by Project Hydrogen (backed by Google free web AI)",
+  "description": "Universal API-less browser-bridged copilot engine for web applications (backed by Google free web AI)",
   "type": "module",
   "main": "src/h2o-copilot-server.js",
   "scripts": {
