@@ -16,6 +16,7 @@ import { h2oRouter } from './router.js';
 import { rateLimiter } from './rate-limiter.js';
 import { auditLogger } from './audit-logger.js';
 import { quantumBenchmark } from './quantum-benchmark.js';
+import { hydrogenDaemon } from './hydrogen-daemon.js';
 
 const app = express();
 app.use(express.json());
@@ -333,6 +334,7 @@ server.listen(portToListen, hostToBind, () => {
   console.log(`[H2O AI Server] Running on http://localhost:${assignedPort} (Bound to ${hostToBind})`);
   console.log(`[H2O AI Server] Instance Access Key: ${authManager.instanceKey}`);
   console.log(`[H2O AI Server] OpenAI-Compatible Endpoint: http://localhost:${assignedPort}/v1/chat/completions`);
+  hydrogenDaemon.start();
 }).on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
     server.listen(0, hostToBind, () => {
@@ -340,6 +342,7 @@ server.listen(portToListen, hostToBind, () => {
       console.log(`[H2O AI Server] Running on http://localhost:${assignedPort} (Bound to ${hostToBind})`);
       console.log(`[H2O AI Server] Instance Access Key: ${authManager.instanceKey}`);
       console.log(`[H2O AI Server] OpenAI-Compatible Endpoint: http://localhost:${assignedPort}/v1/chat/completions`);
+      hydrogenDaemon.start();
     });
   } else {
     console.error('[H2O Server Fatal Error]', err);
@@ -350,6 +353,7 @@ server.listen(portToListen, hostToBind, () => {
 const shutdown = async () => {
   console.log('\n[H2O Inference Server] Shutting down gracefully...');
   try {
+    hydrogenDaemon.stop();
     if (browserBridge.browser) {
       await browserBridge.browser.close();
     }
