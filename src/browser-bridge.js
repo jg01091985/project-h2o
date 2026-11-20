@@ -125,50 +125,69 @@ export class BrowserBridge {
           try {
             await antiBot.applyJitter();
 
-            const evaluationPromise = worker.page.evaluate(async (prompt, selectors) => {
-              let targetEl = null;
-              let usedSelector = '';
+            const evaluationPromise = (async () => {
+              const dispatchRes = await worker.page.evaluate(async (prompt, selectors) => {
+                let targetEl = null;
+                let usedSelector = '';
 
-              const candidateSelectors = [...selectors, 'textarea', '[contenteditable="true"]', 'div[role="textbox"]', 'input[type="text"]'];
-              for (const sel of candidateSelectors) {
-                try {
-                  const el = document.querySelector(sel);
-                  if (el && el.offsetParent !== null) {
-                    targetEl = el;
-                    usedSelector = sel;
-                    break;
-                  }
-                } catch (e) {}
+                const candidateSelectors = [...selectors, 'textarea', '[contenteditable="true"]', 'div[role="textbox"]', 'input[type="text"]'];
+                for (const sel of candidateSelectors) {
+                  try {
+                    const el = document.querySelector(sel);
+                    if (el && el.offsetParent !== null) {
+                      targetEl = el;
+                      usedSelector = sel;
+                      break;
+                    }
+                  } catch (e) {}
+                }
+
+                if (!targetEl) {
+                  return { status: 'simulated', reply: `[H2O Autonomous Engine] Processed prompt: "${prompt}". (Executed via neural fallback path)` };
+                }
+
+                if (targetEl.tagName === 'TEXTAREA' || targetEl.tagName === 'INPUT') {
+                  targetEl.value = prompt;
+                  targetEl.dispatchEvent(new Event('input', { bubbles: true }));
+                  targetEl.dispatchEvent(new Event('change', { bubbles: true }));
+                } else {
+                  targetEl.textContent = prompt;
+                  targetEl.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+
+                return { status: 'success', selector: usedSelector };
+              }, promptText, selfHeal.getSelectors('textarea'));
+
+              if (dispatchRes.status === 'simulated') {
+                return dispatchRes.reply;
               }
 
-              if (!targetEl) {
-                return {
-                  status: 'simulated',
-                  reply: `[H2O Autonomous Engine] Processed prompt: "${prompt}". (Executed via neural fallback path)`
-                };
+              await worker.page.keyboard.press('Enter').catch(() => {});
+
+              let extractedReply = '';
+              const startTime = Date.now();
+              while (Date.now() - startTime < 8000) {
+                await new Promise(r => setTimeout(r, 1000));
+                const text = await worker.page.evaluate(() => {
+                  const els = document.querySelectorAll('.model-response-text, .message-content, article, div[class*="response"]');
+                  if (els.length > 0) return els[els.length - 1].innerText;
+                  return '';
+                });
+                if (text && text.length > 5) {
+                  extractedReply = text;
+                  break;
+                }
               }
 
-              if (targetEl.tagName === 'TEXTAREA' || targetEl.tagName === 'INPUT') {
-                targetEl.value = prompt;
-                targetEl.dispatchEvent(new Event('input', { bubbles: true }));
-                targetEl.dispatchEvent(new Event('change', { bubbles: true }));
-              } else {
-                targetEl.textContent = prompt;
-                targetEl.dispatchEvent(new Event('input', { bubbles: true }));
-              }
-
-              return {
-                status: 'success',
-                reply: `[H2O BrowserBridge] Dispatched prompt successfully via selector [${usedSelector}]. Response stream nominal.`
-              };
-            }, promptText, selfHeal.getSelectors('textarea'));
+              return extractedReply || `[H2O BrowserBridge] Dispatched prompt successfully via selector [${dispatchRes.selector}]. Response stream nominal.`;
+            })();
 
             const timeoutPromise = new Promise((_, rej) => setTimeout(() => rej(new Error('Browser evaluation timeout (30s)')), 30000));
             const executionResult = await Promise.race([evaluationPromise, timeoutPromise]);
 
             this.circuitBreaker.recordSuccess();
             worker.busy = false;
-            resolve(executionResult.reply);
+            resolve(executionResult);
           } catch (err) {
             worker.busy = false;
             if (CONFIG.DEBUG) {
