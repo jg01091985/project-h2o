@@ -1,84 +1,98 @@
-# Project H2O Copilot
+# Project H2O Inference Server
 
-**Project H2O Copilot** is a universal, standalone AI copilot engine and proxy system engineered for web applications. Powered entirely by a headless stealth browser automation bridge to Google Free Web AI, H2O provides zero-cost LLM inference, Model Context Protocol (MCP) tool execution, cryptographic vault isolation, self-healing circuit breakers, and automated token optimization without requiring any commercial cloud billing or credentials.
-
----
-
-## Technical Architecture
-
-```
-[Web App Client] ──(HTTP POST /v1/copilot or WebSocket)──► [H2O Copilot Server]
-                                                                  │
-                   ┌──────────────────────────────────────────────┴──────────────────────────────────────────────┐
-                   ▼                                                                                             ▼
-         [MCP Tool Registry]                                                                           [Stealth Browser Bridge]
-    (System Status, Actions, Query)                                                            (Headless Chrome Automation over
-                   │                                                                              Google Free Web AI Session)
-                   │                                                                                             │
-                   └──────────────────────────────────────────────┬──────────────────────────────────────────────┘
-                                                                  ▼
-                                                      [Safety Validator Engine]
-                                                (Invariant Checks & Bounds Enforcement)
-```
+**Project H2O** is a high-performance, undetectable, standalone AI inference server and drop-in gateway. Engineered to replace commercial per-token cloud billing APIs, H2O provides zero-cost LLM inference powered by Google Free Web AI via a stealth browser automation bridge, reinforced with intelligent request routing, prompt memoization caching, concurrency load balancing, cryptographic bearer token authentication, and full OpenAI API compatibility (`POST /v1/chat/completions`).
 
 ---
 
-## Core Subsystems
+## Architecture & Request Routing
 
-1. **Stealth Browser Bridge (`src/browser-bridge.js`)**
-   - Headless browser automation engine (`puppeteer-extra` with advanced stealth and anti-bot evasion plugins) communicating directly with Google Free Web AI.
-   - Stateful circuit breakers, FIFO prompt queueing, and randomized timing jitter.
+```
+[Client Application] ──(Bearer Token + POST /v1/chat/completions)──► [H2O Inference Server]
+                                                                             │
+                   ┌─────────────────────────────────────────────────────────┴─────────────────────────────────────────┐
+                   ▼                                                                                                   ▼
+        [LRU Inference Cache]                                                                                 [Intelligent H2O Router]
+    (0ms Response for Repeat Prompts)                                                                                  │
+                                                                       ┌───────────────────────────────────────────────┴───────────────────────────────────────────────┐
+                                                                       ▼                                                                                               ▼
+                                                            [Dynamic Worker Pool]                                                                              [Safety Validator]
+                                                       (Least-Busy Load Balancing)                                                                     (Invariant Bounds Check)
+                                                                       │
+                                                                       ▼
+                                                      [Stealth Browser Bridge Engine]
+                                                     (Headless Chrome over Google Free Web AI)
+```
 
-2. **Model Context Protocol (MCP) Registry (`src/mcp-registry.js`)**
-   - Standardized tool declarations and execution handlers supporting system telemetry, action dispatch, data querying, and runtime custom tool registration.
+---
 
-3. **Safety & Invariant Validation (`src/safety-validator.js`)**
-   - Deterministic bounds checking and payload sanitization preventing out-of-bounds parameter execution and unauthorized state overrides.
+## Core Capabilities
 
-4. **Cryptographic Vault (`src/vault.js`)**
-   - AES-256-GCM authenticated encryption for secure persistence of session tokens, state ledgers, and credentials.
+1. **Intelligent Request Router & Caching (`src/router.js`, `src/cache.js`)**
+   - **LRU Memoization Caching**: Instantaneous 0ms responses for repeat prompts, eliminating redundant browser overhead.
+   - **Least-Busy Load Balancing**: Distributes concurrent inference requests evenly across isolated stealth browser worker pools (`H2O_POOL_SIZE`).
 
-5. **Anti-Bot & Stealth Automation (`src/anti-bot.js`, `src/failover.js`)**
-   - Headless evasion techniques including WebGL vendor/renderer spoofing, canvas fingerprint noise injection, navigator overrides, randomized user-agent rotation, and timing jitter.
+2. **OpenAI-Compatible Drop-In Gateway (`POST /v1/chat/completions`)**
+   - Drop-in replacement for standard LLM APIs. Configure any existing application or framework with H2O's server URL and instance access key with zero code modifications.
 
-6. **Self-Healing & Autonomous Learning (`src/self-heal.js`, `src/self-learn.js`, `src/self-evolve.js`)**
-   - Runtime telemetry monitoring, automated error recovery loops, dependency checking, and historical pattern reinforcement.
+3. **Cryptographic Instance Access Control (`src/auth.js`)**
+   - Automatically generates a secure bearer token (`h2o_live_[hex]`) on first boot, enforcing strict `Authorization: Bearer <token>` authentication across all inference endpoints.
 
-7. **Universal Runner & Token Optimizer (`src/universal-runner.js`, `src/token-optimizer.js`)**
-   - Dynamic port resolution based on working directory hashes, token window management, and telemetry compression.
+4. **Stealth Anti-Bot Browser Bridge (`src/browser-bridge.js`, `src/anti-bot.js`)**
+   - Headless evasion suite (`puppeteer-extra` stealth, WebGL vendor/renderer spoofing, canvas fingerprint noise injection, and behavioral jitter) ensuring requests appear as legitimate user activity.
+
+5. **Self-Healing & Autonomous Resilience (`src/self-heal.js`, `src/self-evolve.js`, `src/self-learn.js`)**
+   - Runtime telemetry monitoring, smart multi-selector DOM probing, circuit breakers, and automatic worker page recovery.
 
 ---
 
 ## Service Specification
 
-### `POST /v1/copilot`
+### `POST /v1/chat/completions` (OpenAI Compatible)
 
-Executes a synchronous copilot inference request with MCP tool invocation and safety validation via the stealth browser bridge.
+**Request Headers:**
+```http
+Authorization: Bearer h2o_live_...
+Content-Type: application/json
+```
 
-**Request Payload:**
+**Request Body:**
 ```json
 {
+  "model": "gemini-4-hydrogen",
   "messages": [
-    { "role": "user", "content": "Retrieve current system status." }
-  ],
-  "system": "You are H2O Copilot.",
-  "tools": []
+    { "role": "user", "content": "Explain quantum computing in 3 sentences." }
+  ]
 }
 ```
 
-**Response Payload:**
+**Response Body:**
 ```json
 {
-  "role": "assistant",
-  "content": "System status nominal. Uptime: 3600s.",
-  "engine": "browser-bridge",
-  "model": "gemini-4-hydrogen"
+  "id": "h2o-chat-1795143908547",
+  "object": "chat.completion",
+  "created": 1795143908,
+  "model": "gemini-4-hydrogen",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Quantum computing leverages qubits..."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 50,
+    "completion_tokens": 30,
+    "total_tokens": 80
+  },
+  "h2o_routing": {
+    "engine": "browser-bridge",
+    "cached": false
+  }
 }
 ```
-
-### WebSocket Streaming
-
-Connect via WebSocket to send JSON packets (`{ messages: [...] }`) and receive real-time token chunks (`{ type: 'chunk', text: '...' }`).
 
 ---
 
@@ -87,7 +101,9 @@ Connect via WebSocket to send JSON packets (`{ messages: [...] }`) and receive r
 | Variable | Description | Default |
 | :--- | :--- | :--- |
 | `H2O_PORT` | HTTP/WebSocket server port (auto-resolved if unset) | `4050` |
-| `GEMINI_MODEL` | Primary LLM engine identifier | `gemini-4-hydrogen` |
+| `H2O_INSTANCE_KEY` | Custom bearer access token (auto-generated if unset) | `auto` |
+| `H2O_POOL_SIZE` | Number of concurrent stealth browser workers | `2` |
+| `GEMINI_MODEL` | Primary model identifier | `gemini-4-hydrogen` |
 | `DEBUG` | Enable verbose diagnostic logging | `true` |
 
 ---
@@ -98,11 +114,11 @@ Connect via WebSocket to send JSON packets (`{ messages: [...] }`) and receive r
 # Install dependencies
 npm install
 
-# Start H2O Copilot server
+# Start H2O Inference Server (generates instance access key on boot)
 npm start
 
-# Run test suite
-npm test
+# Run comprehensive test suites & stress verification
+npm test && node test/test-inference-server.js && node test/test-stress.js
 ```
 
 ## License

@@ -10,6 +10,7 @@ import { H2OTranslator } from './translator.js';
 import { memoryLedger } from './memory-ledger.js';
 import { TokenOptimizer } from './token-optimizer.js';
 import { authManager } from './auth.js';
+import { h2oRouter } from './router.js';
 
 const app = express();
 app.use(express.json());
@@ -31,7 +32,6 @@ app.use((req, res, next) => {
   next();
 });
 
-const mcpRegistry = new MCPRegistry();
 const safetyValidator = new SafetyValidator();
 
 // Health check endpoint (Public)
@@ -42,6 +42,7 @@ app.get('/health', (req, res) => {
     engine: 'browser-bridge (Google Free Web AI / Standalone Browser Automation)',
     model: CONFIG.GEMINI_MODEL,
     memoryEntries: memoryLedger.history.length,
+    routerMetrics: h2oRouter.getMetrics(),
     timestamp: new Date().toISOString()
   });
 });
@@ -55,6 +56,15 @@ const authenticate = (req, res, next) => {
   next();
 };
 
+// Router telemetry metrics endpoint (Authenticated)
+app.get('/v1/metrics', authenticate, (req, res) => {
+  res.json({
+    status: 'ok',
+    metrics: h2oRouter.getMetrics(),
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Standard H2O Copilot REST endpoint
 app.post('/v1/copilot', authenticate, async (req, res) => {
   try {
@@ -63,14 +73,15 @@ app.post('/v1/copilot', authenticate, async (req, res) => {
 
     memoryLedger.append('user', lastUserMessage);
 
-    if (CONFIG.DEBUG) console.log('[H2O Server] Routing through Standalone Browser Automation Bridge...');
-    const browserReply = await browserBridge.executePrompt(lastUserMessage);
-    memoryLedger.append('assistant', browserReply, { engine: 'browser-bridge' });
+    if (CONFIG.DEBUG) console.log('[H2O Server] Routing through Intelligent H2O Router...');
+    const result = await h2oRouter.route(lastUserMessage);
+    memoryLedger.append('assistant', result.content, { engine: result.engine, cached: result.cached });
 
     return res.json({
       role: 'assistant',
-      content: browserReply,
-      engine: 'browser-bridge',
+      content: result.content,
+      engine: result.engine,
+      cached: result.cached,
       model: CONFIG.GEMINI_MODEL
     });
   } catch (err) {
@@ -87,9 +98,9 @@ app.post('/v1/chat/completions', authenticate, async (req, res) => {
 
     memoryLedger.append('user', lastUserMessage);
 
-    if (CONFIG.DEBUG) console.log('[H2O Inference Server] Processing OpenAI-compatible chat completion...');
-    const browserReply = await browserBridge.executePrompt(lastUserMessage);
-    memoryLedger.append('assistant', browserReply, { engine: 'browser-bridge' });
+    if (CONFIG.DEBUG) console.log('[H2O Inference Server] Processing OpenAI-compatible chat completion via H2O Router...');
+    const result = await h2oRouter.route(lastUserMessage);
+    memoryLedger.append('assistant', result.content, { engine: result.engine, cached: result.cached });
 
     return res.json({
       id: 'h2o-chat-' + Date.now(),
@@ -101,7 +112,7 @@ app.post('/v1/chat/completions', authenticate, async (req, res) => {
           index: 0,
           message: {
             role: 'assistant',
-            content: browserReply
+            content: result.content
           },
           finish_reason: 'stop'
         }
@@ -110,6 +121,10 @@ app.post('/v1/chat/completions', authenticate, async (req, res) => {
         prompt_tokens: 50,
         completion_tokens: 30,
         total_tokens: 80
+      },
+      h2o_routing: {
+        engine: result.engine,
+        cached: result.cached
       }
     });
   } catch (err) {
@@ -139,9 +154,9 @@ wss.on('connection', (ws) => {
       memoryLedger.append('user', lastUserMessage);
       ws.send(JSON.stringify({ type: 'start' }));
 
-      const browserReply = await browserBridge.executePrompt(lastUserMessage);
-      memoryLedger.append('assistant', browserReply, { engine: 'browser-bridge' });
-      ws.send(JSON.stringify({ type: 'chunk', text: browserReply }));
+      const result = await h2oRouter.route(lastUserMessage);
+      memoryLedger.append('assistant', result.content, { engine: result.engine, cached: result.cached });
+      ws.send(JSON.stringify({ type: 'chunk', text: result.content }));
       ws.send(JSON.stringify({ type: 'complete' }));
     } catch (err) {
       ws.send(JSON.stringify({ type: 'error', error: err.message }));
