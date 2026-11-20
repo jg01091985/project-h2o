@@ -25,10 +25,13 @@ function generateSmartFallback(prompt) {
     return "I am an AI assistant here to help you with your projects and questions.";
   }
 
-  if (p.includes('where is') || p.includes('locate') || p.includes('capital of')) {
-    const parts = cleanPrompt.split(/where is|locate|capital of/i);
-    const location = parts[1] ? parts[1].trim().replace(/[?]/g, '') : 'that location';
-    return `${location.charAt(0).toUpperCase() + location.slice(1)} is located globally with distinct geographical coordinates and regional significance.`;
+  if (p.includes('where') || p.includes('locate') || p.includes('capital of')) {
+    const parts = cleanPrompt.split(/where is|where r|where if|where|locate|capital of/i);
+    const location = parts[parts.length - 1] ? parts[parts.length - 1].trim().replace(/[?]/g, '') : '';
+    if (location) {
+      return `I can help you find ${location}. Could you provide a bit more context, such as the country or region, so I can give you precise details?`;
+    }
+    return "Could you please specify what location you are looking for?";
   }
 
   if (p.includes('hello') || p.includes('hi') || p.includes('hey') || p.includes('sup')) {
@@ -39,7 +42,7 @@ function generateSmartFallback(prompt) {
     return "All systems operational.";
   }
 
-  return `Here is the response regarding "${cleanPrompt}": This covers the key details and practical aspects of your inquiry. Let me know if you need any adjustments or further elaboration.`;
+  return `I understand you're asking about "${cleanPrompt}". Could you clarify or provide a bit more context so I can give you an accurate answer?`;
 }
 
 export class BrowserBridge {
