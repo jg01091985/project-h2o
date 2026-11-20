@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>H2O Copilot Web App Demo</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+    .container { width: 100%; max-width: 700px; background: #1e293b; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column; height: 600px; border: 1px solid #334155; }
+    header { background: #0f172a; padding: 20px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; font-size: 1.25rem; font-weight: 600; color: #38bdf8; }
+    #status-badge { font-size: 0.85rem; padding: 4px 10px; border-radius: 12px; background: #065f46; color: #34d399; }
+    #chat-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+    .message { padding: 12px 16px; border-radius: 8px; max-width: 80%; line-height: 1.5; font-size: 0.95rem; }
+    .user { background: #0284c7; color: white; align-self: flex-end; }
+    .assistant { background: #334155; color: #f1f5f9; align-self: flex-start; border: 1px solid #475569; }
+    .input-area { padding: 20px; background: #0f172a; border-top: 1px solid #334155; display: flex; gap: 10px; }
+    input { flex: 1; padding: 12px 16px; border-radius: 8px; border: 1px solid #475569; background: #1e293b; color: white; font-size: 1rem; outline: none; }
+    input:focus { border-color: #38bdf8; }
+    button { padding: 12px 24px; border-radius: 8px; background: #0284c7; color: white; border: none; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: #0369a1; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>H2O Copilot Web App Demo</h1>
+      <div id="status-badge">Connected</div>
+    </header>
+    <div id="chat-box">
+      <div class="message assistant">Hello! I am H2O Copilot, your universal API-less AI assistant. How can I assist your web application today?</div>
+    </div>
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="Ask copilot anything or request system status..." autofocus>
+      <button id="send-btn">Send</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { H2OCopilotClient } from '/src/client-sdk.js';
+
+    const endpoint = '/v1/copilot';
+    const copilot = new H2OCopilotClient(endpoint);
+
+    const chatBox = document.getElementById('chat-box');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const statusBadge = document.getElementById('status-badge');
+
+    let messages = [];
+
+    async function handleSend() {
+      const text = userInput.value.trim();
+      if (!text) return;
+
+      const userDiv = document.createElement('div');
+      userDiv.className = 'message user';
+      userDiv.textContent = text;
+      chatBox.appendChild(userDiv);
+      userInput.value = '';
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      statusBadge.textContent = 'Thinking...';
+      statusBadge.style.background = '#d97706';
+      statusBadge.style.color = '#fef3c7';
+
+      const response = await copilot.ask(text, 'You are H2O Copilot for web apps.', messages);
+
+      messages.push({ role: 'user', content: text });
+      messages.push({ role: 'assistant', content: response.content });
+
+      const assistantDiv = document.createElement('div');
+      assistantDiv.className = 'message assistant';
+      assistantDiv.textContent = response.content;
+      chatBox.appendChild(assistantDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      statusBadge.textContent = 'Connected';
+      statusBadge.style.background = '#065f46';
+      statusBadge.style.color = '#34d399';
+    }
+
+    sendBtn.addEventListener('click', handleSend);
+    userInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleSend();
+    });
+  </script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 import express from 'express';
 import http from 'http';
+import path from 'path';
 import { WebSocketServer } from 'ws';
 import { CONFIG } from './config.js';
 import { GeminiBridge } from './gemini-bridge.js';
@@ -12,6 +13,12 @@ import { TokenOptimizer } from './token-optimizer.js';
 
 const app = express();
 app.use(express.json());
+app.use(express.static(path.join(process.cwd(), 'examples')));
+app.use('/src', express.static(path.join(process.cwd(), 'src')));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'examples/app.html'));
+});
 
 // Enable CORS for frontend web applications
 app.use((req, res, next) => {
