@@ -1,5 +1,5 @@
 /**
- * H2O Copilot Client SDK
+ * H2O Copilot Frontend Client
  * Drop-in frontend library for web applications.
  */
 export class H2OCopilotClient {
@@ -37,7 +37,7 @@ export class H2OCopilotClient {
     } catch (err) {
       clearTimeout(timeoutId);
       const errorMessage = err.name === 'AbortError' ? 'Request timed out after ' + this.timeoutMs + 'ms' : err.message;
-      console.error('[H2O Client SDK Error]', errorMessage);
+      console.error('[H2O Client Error]', errorMessage);
       return {
         role: 'assistant',
         content: `Error connecting to H2O Copilot: ${errorMessage}`,

@@ -1,6 +1,6 @@
 # Project H2O Copilot
 
-**Project H2O Copilot** is a universal, 100% API-less AI copilot engine and proxy system engineered for web applications. Powered entirely by a headless stealth browser automation bridge to Google Free Web AI, H2O provides zero-cost LLM inference, Model Context Protocol (MCP) tool execution, cryptographic vault isolation, self-healing circuit breakers, and automated token optimization without requiring any commercial cloud billing or developer keys.
+**Project H2O Copilot** is a universal, standalone AI copilot engine and proxy system engineered for web applications. Powered entirely by a headless stealth browser automation bridge to Google Free Web AI, H2O provides zero-cost LLM inference, Model Context Protocol (MCP) tool execution, cryptographic vault isolation, self-healing circuit breakers, and automated token optimization without requiring any commercial cloud billing or credentials.
 
 ---
 

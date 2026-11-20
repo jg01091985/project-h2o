@@ -38,14 +38,14 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'h2o-copilot',
-    engine: 'browser-bridge (Google Free Web AI / API-less)',
+    engine: 'browser-bridge (Google Free Web AI / Standalone Browser Automation)',
     model: CONFIG.GEMINI_MODEL,
     memoryEntries: memoryLedger.history.length,
     timestamp: new Date().toISOString()
   });
 });
 
-// Main Copilot REST endpoint (Pure API-less Browser Bridge)
+// Main Copilot REST endpoint (Standalone Browser Automation Bridge)
 app.post('/v1/copilot', async (req, res) => {
   try {
     const { messages, system } = req.body;
@@ -53,7 +53,7 @@ app.post('/v1/copilot', async (req, res) => {
 
     memoryLedger.append('user', lastUserMessage);
 
-    if (CONFIG.DEBUG) console.log('[H2O Server] Routing through API-less Browser Bridge...');
+    if (CONFIG.DEBUG) console.log('[H2O Server] Routing through Standalone Browser Automation Bridge...');
     const browserReply = await browserBridge.executePrompt(lastUserMessage);
     memoryLedger.append('assistant', browserReply, { engine: 'browser-bridge' });
 
@@ -108,12 +108,12 @@ const portToListen = process.env.PORT ? parseInt(process.env.PORT, 10) : CONFIG.
 
 server.listen(portToListen, () => {
   const assignedPort = server.address().port;
-  console.log(`[H2O Copilot] Running on http://localhost:${assignedPort} (Engine: API-less Browser Bridge / Google Free Web AI)`);
+  console.log(`[H2O Copilot] Running on http://localhost:${assignedPort} (Engine: Standalone Browser Automation Bridge / Google Free Web AI)`);
 }).on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
     server.listen(0, () => {
       const assignedPort = server.address().port;
-      console.log(`[H2O Copilot] Running on http://localhost:${assignedPort} (Engine: API-less Browser Bridge / Google Free Web AI)`);
+      console.log(`[H2O Copilot] Running on http://localhost:${assignedPort} (Engine: Standalone Browser Automation Bridge / Google Free Web AI)`);
     });
   } else {
     console.error('[H2O Server Fatal Error]', err);
